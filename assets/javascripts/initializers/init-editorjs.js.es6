@@ -3,7 +3,7 @@ import loadScript from "discourse/lib/load-script";
 import I18n from "I18n";
 import { ajax } from "discourse/lib/ajax";
 import DemoTool from "../lib/editorjs-demo-tool";
-import VideoTool from "../discourse/lib/editorjs/tools/video-tool";
+import VideoTool from "../lib/video-tool";
 
 // 调试辅助函数
 const DEBUG = true;

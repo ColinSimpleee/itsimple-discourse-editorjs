@@ -1,6 +1,9 @@
 /**
  * Video Tool for Editor.js
  */
+import { getOwner } from "@ember/application";
+import { createUpload } from "../vendor/upchunk";
+
 export default class VideoTool {
   static get toolbox() {
     return {
@@ -32,6 +35,8 @@ export default class VideoTool {
     };
     this.container = undefined;
     this.settings = config;
+    this.uploading = false;
+    this.uploadProgress = 0;
   }
 
   render() {
@@ -41,7 +46,7 @@ export default class VideoTool {
     if (this.data.videoId && this.data.playbackId) {
       this._renderVideo();
     } else {
-      this._renderSimpleUploader();
+      this._renderUploader();
     }
 
     return this.container;
@@ -85,13 +90,23 @@ export default class VideoTool {
     this.container.appendChild(videoContainer);
   }
 
-  _renderSimpleUploader() {
-    // 创建简单的上传界面
+  _renderUploader() {
+    // 创建上传界面
     const uploaderContainer = document.createElement("div");
     uploaderContainer.classList.add("video-uploader-container");
 
-    uploaderContainer.innerHTML = `
-      <div class="video-uploader-simple">
+    if (this.uploading) {
+      this._renderUploadProgress(uploaderContainer);
+    } else {
+      this._renderUploadForm(uploaderContainer);
+    }
+
+    this.container.appendChild(uploaderContainer);
+  }
+
+  _renderUploadForm(container) {
+    container.innerHTML = `
+      <div class="video-uploader-form">
         <div class="video-uploader-icon">
           <svg width="50" height="50" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
             <path d="M18 4.5V15.5C18 16.0523 17.5523 16.5 17 16.5H3C2.44772 16.5 2 16.0523 2 15.5V4.5C2 3.94772 2.44772 3.5 3 3.5H17C17.5523 3.5 18 3.94772 18 4.5ZM13.5 10L8 6.5V13.5L13.5 10Z" fill="currentColor"/>
@@ -104,9 +119,47 @@ export default class VideoTool {
     `;
 
     // 添加样式
+    this._addStyles();
+
+    // 添加点击事件
+    container.querySelector(".video-uploader-form").addEventListener("click", () => {
+      const fileInput = container.querySelector(".video-file-input");
+      fileInput.click();
+    });
+
+    // 添加文件选择事件
+    container.querySelector(".video-file-input").addEventListener("change", (event) => {
+      const file = event.target.files[0];
+      if (!file) {
+        return;
+      }
+
+      this.uploading = true;
+      this._renderUploadProgress(container);
+      this._uploadVideo(file);
+    });
+  }
+
+  _renderUploadProgress(container) {
+    container.innerHTML = `
+      <div class="video-uploader-uploading">
+        <div class="video-uploader-progress">
+          <div class="video-uploader-progress-bar" style="width: ${this.uploadProgress}%"></div>
+        </div>
+        <div class="video-uploader-status">正在上传视频... ${this.uploadProgress.toFixed(1)}%</div>
+      </div>
+    `;
+  }
+
+  _addStyles() {
+    if (document.getElementById("video-tool-styles")) {
+      return;
+    }
+
     const style = document.createElement("style");
+    style.id = "video-tool-styles";
     style.textContent = `
-      .video-uploader-simple {
+      .video-uploader-form {
         padding: 30px;
         border: 2px dashed #ccc;
         border-radius: 5px;
@@ -115,7 +168,7 @@ export default class VideoTool {
         background-color: #f9f9f9;
         transition: background-color 0.3s;
       }
-      .video-uploader-simple:hover {
+      .video-uploader-form:hover {
         background-color: #f0f0f0;
       }
       .video-uploader-icon {
@@ -152,70 +205,90 @@ export default class VideoTool {
         font-size: 14px;
         color: #666;
       }
+      .video-container {
+        position: relative;
+        width: 100%;
+        padding-top: 56.25%; /* 16:9 宽高比 */
+      }
+      .video-player {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+      }
+      .video-info {
+        margin-top: 5px;
+        font-size: 12px;
+        color: #888;
+      }
     `;
     document.head.appendChild(style);
-
-    // 添加点击事件
-    uploaderContainer.querySelector(".video-uploader-simple").addEventListener("click", () => {
-      const fileInput = uploaderContainer.querySelector(".video-file-input");
-      fileInput.click();
-    });
-
-    // 添加文件选择事件
-    uploaderContainer.querySelector(".video-file-input").addEventListener("change", (event) => {
-      const file = event.target.files[0];
-      if (!file) {
-        return;
-      }
-
-      // 显示上传中状态
-      uploaderContainer.innerHTML = `
-        <div class="video-uploader-uploading">
-          <div class="video-uploader-progress">
-            <div class="video-uploader-progress-bar" style="width: 0%"></div>
-          </div>
-          <div class="video-uploader-status">正在上传视频...</div>
-        </div>
-      `;
-
-      // 这里应该调用实际的上传API
-      // 由于我们没有实际的上传API，这里只是模拟上传过程
-      this._simulateVideoUpload(file, uploaderContainer);
-    });
-
-    this.container.appendChild(uploaderContainer);
   }
 
-  _simulateVideoUpload(file, container) {
-    // 模拟上传进度
-    let progress = 0;
-    const progressBar = container.querySelector(".video-uploader-progress-bar");
-    const statusText = container.querySelector(".video-uploader-status");
+  async _uploadVideo(file) {
+    try {
+      // 获取 MuxApi 服务
+      const muxApi = getOwner(this).lookup("service:mux-api");
 
-    const interval = setInterval(() => {
-      progress += 5;
-      progressBar.style.width = `${progress}%`;
+      // 创建上传
+      const uploadData = await muxApi.createDirectUpload();
 
-      if (progress >= 100) {
-        clearInterval(interval);
-        statusText.textContent = "视频处理中...";
+      // 使用 UpChunk 上传文件
+      const upload = createUpload({
+        file,
+        endpoint: uploadData.url,
+        chunkSize: 5120 // 5MB 分块
+      });
 
-        // 模拟视频处理完成
-        setTimeout(() => {
-          // 模拟获取到视频信息
-          this.data = {
-            videoId: "demo-video-id",
-            playbackId: "demo-playback-id",
-            thumbnailUrl: "https://image.mux.com/demo-playback-id/thumbnail.jpg",
-            duration: 120
-          };
+      // 监听上传进度
+      upload.on("progress", (event) => {
+        this.uploadProgress = event.detail;
+        this._renderUploadProgress(this.container.querySelector(".video-uploader-uploading"));
+      });
 
-          // 重新渲染视频
-          this.container.innerHTML = "";
-          this._renderVideo();
-        }, 2000);
+      // 监听上传完成
+      upload.on("success", async () => {
+        this.uploadProgress = 100;
+        this.uploadStatus = "处理中...";
+        this._renderUploadProgress(this.container.querySelector(".video-uploader-uploading"));
+
+        // 检查视频状态
+        this._checkVideoStatus(muxApi, uploadData.video_id);
+      });
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error("上传视频失败:", error);
+      this.uploading = false;
+      this._renderUploader();
+    }
+  }
+
+  async _checkVideoStatus(muxApi, videoId) {
+    try {
+      const status = await muxApi.getVideoStatus(videoId);
+
+      if (status.state === "ready") {
+        this.data = {
+          videoId,
+          playbackId: status.playback_id,
+          thumbnailUrl: status.thumbnail_url,
+          duration: status.duration
+        };
+
+        // 重新渲染视频
+        this.container.innerHTML = "";
+        this._renderVideo();
+      } else {
+        // 如果视频还在处理中，5秒后再次检查
+        setTimeout(() => this._checkVideoStatus(muxApi, videoId), 5000);
       }
-    }, 200);
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error("获取视频状态失败:", error);
+      this.uploading = false;
+      this._renderUploader();
+    }
   }
 
   _formatDuration(seconds) {
