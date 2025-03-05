@@ -1,7 +1,5 @@
 .editorjs-container {
   position: relative;
-  width: 100%;
-  min-height: 200px;
   border: 1px solid var(--primary-low);
   border-radius: 3px;
   padding: 10px;
@@ -513,4 +511,15 @@
       }
     }
   }
+}
+
+// 隐藏 Discourse 原生工具栏
+.d-editor-container {
+  .d-editor-button-bar {
+    display: none !important;
+  }
+}
+
+.d-editor-textarea-wrapper{
+  border: none !important;
 }

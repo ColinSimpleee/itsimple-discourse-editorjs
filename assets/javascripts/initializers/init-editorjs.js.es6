@@ -105,6 +105,16 @@ export default {
           }
           
           originalEditor.style.display = "none";
+          
+          // 隐藏原生工具栏
+          const originalToolbar = this.element.querySelector(".d-editor-button-bar");
+          if (originalToolbar) {
+            originalToolbar.style.display = "none";
+            log("已隐藏原生工具栏");
+          } else {
+            error("找不到原生工具栏");
+          }
+          
           originalEditor.insertAdjacentElement("afterend", editorContainer);
           
           try {
