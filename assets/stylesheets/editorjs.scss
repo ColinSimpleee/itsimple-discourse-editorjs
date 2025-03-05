@@ -1,7 +1,7 @@
 .editorjs-container {
   border: 1px solid var(--primary-low);
   border-radius: 3px;
-  min-height: 200px;
+  height : 100%;
   padding: 10px;
   margin-bottom: 10px;
   overflow-y: scroll;
@@ -251,4 +251,10 @@
 } 
 .image-tool__image-preloader {
   display: none !important;
+}
+
+.ce-popover--opened {
+  input {
+    width: auto !important;
+  }
 }
