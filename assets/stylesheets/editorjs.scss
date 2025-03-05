@@ -4,6 +4,7 @@
   min-height: 200px;
   padding: 10px;
   margin-bottom: 10px;
+  overflow-y: scroll;
   
   .ce-block {
     margin-bottom: 10px;
@@ -248,3 +249,6 @@
 .image-tool .image-tool__image-picture + .image-tool__image-preloader {
   display: none !important;
 } 
+.image-tool__image-preloader {
+  display: none !important;
+}
