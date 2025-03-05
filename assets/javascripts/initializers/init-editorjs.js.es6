@@ -39,7 +39,8 @@ export default {
             loadScript("https://cdn.jsdelivr.net/npm/@editorjs/table@2.2.2"),
             loadScript("https://cdn.jsdelivr.net/npm/@editorjs/marker@1.3.0"),
             loadScript("https://cdn.jsdelivr.net/npm/@editorjs/warning@1.3.0"),
-            loadScript("https://cdn.jsdelivr.net/npm/@editorjs/embed@2.5.3")
+            loadScript("https://cdn.jsdelivr.net/npm/@editorjs/embed@2.5.3"),
+            loadScript("https://cdn.jsdelivr.net/npm/editorjs-drag-drop@1.1.13/dist/bundle.min.js")
           ]);
           
           log("EditorJS 和所有工具已成功加载");
@@ -365,7 +366,17 @@ export default {
               onChange: () => {
                 this._syncContent();
               },
-              data: this._parseMarkdownToBlocks(this.value || "")
+              data: this._parseMarkdownToBlocks(this.value || ""),
+              // 添加 DragDrop 插件配置
+              onReady: () => {
+                // 检查 DragDrop 插件是否加载成功
+                if (window.DragDrop) {
+                  log("初始化 DragDrop 插件");
+                  new window.DragDrop(this.editorJS);
+                } else {
+                  error("DragDrop 插件未加载成功");
+                }
+              }
             });
             
             // 添加图片块渲染后处理
