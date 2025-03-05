@@ -2,6 +2,7 @@ import { withPluginApi } from "discourse/lib/plugin-api";
 import loadScript from "discourse/lib/load-script";
 import I18n from "I18n";
 import { ajax } from "discourse/lib/ajax";
+import DemoTool from "../lib/editorjs-demo-tool";
 
 // 调试辅助函数
 const DEBUG = true;
@@ -321,6 +322,11 @@ export default {
                     figma: true
                   }
                 }
+              },
+              // 添加自定义 Demo 工具
+              demo: {
+                class: DemoTool,
+                inlineToolbar: false
               }
             };
             
@@ -549,6 +555,15 @@ export default {
                 });
               }
             }
+            // 识别 Demo 块
+            else if (paragraph.trim().startsWith("[demo]")) {
+              blocks.push({
+                type: "demo",
+                data: {
+                  message: "Hello World"
+                }
+              });
+            }
             // 其他内容视为普通段落
             else if (paragraph.trim() !== "") {
               blocks.push({
@@ -618,6 +633,9 @@ export default {
                 if (block.data.caption) {
                   markdown += `*${block.data.caption}*\n\n`;
                 }
+                break;
+              case "demo":
+                markdown += `[demo]\n\n`;
                 break;
               default:
                 console.warn("未知的块类型:", block.type);

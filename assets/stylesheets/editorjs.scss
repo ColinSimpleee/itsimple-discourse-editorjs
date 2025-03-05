@@ -258,3 +258,31 @@
     width: auto !important;
   }
 }
+
+/* Demo 工具样式 */
+.demo-block {
+  padding: 20px;
+  background-color: #f9f9f9;
+  border-radius: 5px;
+  border: 1px solid #e0e0e0;
+  margin: 10px 0;
+  text-align: center;
+  
+  &__message {
+    font-weight: bold;
+    font-size: 18px;
+    color: #333;
+  }
+  
+  &:hover {
+    background-color: #f0f0f0;
+    border-color: #ccc;
+    transition: all 0.3s ease;
+  }
+}
+
+/* 工具箱中 Demo 图标的样式 */
+.ce-toolbar__plus-active .ce-toolbar__plus svg path,
+.ce-toolbar__settings-btn--active .ce-toolbar__settings-btn svg path {
+  fill: currentColor;
+}
