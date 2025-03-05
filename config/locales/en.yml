@@ -1,0 +1,12 @@
+en:
+  js:
+    discourse_editorjs:
+      toolbar:
+        bold_title: "Bold"
+        italic_title: "Italic"
+        link_title: "Link"
+        quote_title: "Quote"
+        code_title: "Code"
+        image_title: "Image"
+        list_title: "List"
+        heading_title: "Heading" 

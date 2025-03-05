@@ -1,0 +1,16 @@
+{
+  "name": "itsimple-discourse-editorjs",
+  "about": "将Discourse默认编辑器替换为EditorJS",
+  "version": "0.1.0",
+  "authors": "Your Name",
+  "url": "https://github.com/yourusername/discourse-editorjs",
+  "license_url": "https://github.com/yourusername/discourse-editorjs/blob/master/LICENSE",
+  "component": true,
+  "meta": {
+    "itsimple-discourse-editorjs": {
+      "title": "Editor.js 编辑器",
+      "description": "一个基于块的现代化编辑器，替代默认的Markdown编辑器",
+      "icon": "fab-js-square"
+    }
+  }
+} 

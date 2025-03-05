@@ -1,0 +1,250 @@
+.editorjs-container {
+  border: 1px solid var(--primary-low);
+  border-radius: 3px;
+  min-height: 200px;
+  padding: 10px;
+  margin-bottom: 10px;
+  
+  .ce-block {
+    margin-bottom: 10px;
+  }
+  
+  .ce-block__content {
+    max-width: 100%;
+    padding: 0 10px;
+  }
+  
+  .ce-toolbar__content {
+    max-width: 100%;
+  }
+  
+  // 工具栏样式
+  .ce-toolbar__actions {
+    right: 5px;
+  }
+  
+  .ce-toolbar__plus {
+    left: 5px;
+  }
+  
+  .ce-toolbox {
+    background: var(--secondary);
+    border: 1px solid var(--primary-low);
+    border-radius: 4px;
+    box-shadow: 0 3px 15px -3px rgba(13, 20, 33, 0.13);
+    
+    .ce-toolbox__button {
+      color: var(--primary);
+      
+      &:hover {
+        background: var(--primary-very-low);
+      }
+    }
+  }
+  
+  // 表格样式
+  .tc-table {
+    width: 100%;
+    border-collapse: collapse;
+    
+    td, th {
+      border: 1px solid var(--primary-low);
+      padding: 8px;
+    }
+    
+    tr:nth-child(even) {
+      background-color: var(--secondary-very-low);
+    }
+  }
+  
+  // 警告块样式
+  .cdx-warning {
+    background-color: var(--danger-low);
+    border-left: 4px solid var(--danger);
+    padding: 10px;
+    margin-bottom: 15px;
+    
+    .cdx-warning__title {
+      font-weight: bold;
+      color: var(--danger);
+    }
+  }
+  
+  // 标记样式
+  .cdx-marker {
+    background-color: var(--highlight);
+    padding: 0 4px;
+  }
+  
+  // 引用样式
+  .cdx-block.cdx-quote {
+    border-left: 4px solid var(--primary-low-mid);
+    padding-left: 10px;
+    margin: 0;
+  }
+  
+  // 代码块样式
+  .ce-code {
+    background-color: var(--primary-very-low);
+    font-family: monospace;
+    padding: 10px;
+    border-radius: 4px;
+  }
+  
+  // 分隔线样式
+  .ce-delimiter {
+    margin: 15px 0;
+  }
+  
+  // 图片样式
+  .image-tool {
+    margin-bottom: 15px;
+    position: relative;
+    
+    .image-tool__image {
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+      
+      .image-tool__image-picture {
+        max-width: 100%;
+        display: block;
+      }
+    }
+    
+    .image-tool__caption {
+      margin-top: 5px;
+      color: var(--primary-medium);
+      font-size: 0.9em;
+      text-align: center;
+    }
+    
+    // 图片上传区域
+    .image-tool__image-preloader {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: var(--primary-very-low);
+      min-height: 200px;
+      border-radius: 4px;
+      border: 1px dashed var(--primary-low-mid);
+      
+      &[style*="display: none"],
+      &.hidden,
+      &.image-tool__image-preloader--hidden {
+        display: none !important;
+      }
+    }
+    
+    // 确保在图片加载完成后隐藏预加载器
+    &.image-tool--loaded {
+      .image-tool__image-preloader {
+        display: none !important;
+      }
+    }
+    
+    // 图片上传按钮
+    .image-tool__button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: var(--tertiary);
+      color: var(--secondary);
+      border-radius: 4px;
+      padding: 10px 15px;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+      
+      &:hover {
+        background-color: var(--tertiary-hover);
+      }
+    }
+  }
+  
+  // 内联工具栏样式
+  .ce-inline-toolbar {
+    background-color: var(--secondary);
+    border: 1px solid var(--primary-low);
+    border-radius: 4px;
+    box-shadow: 0 3px 15px -3px rgba(13, 20, 33, 0.13);
+    
+    .ce-inline-tool {
+      color: var(--primary);
+      
+      &:hover {
+        background-color: var(--primary-very-low);
+      }
+      
+      &.ce-inline-tool--active {
+        color: var(--tertiary);
+      }
+    }
+  }
+  
+  // 上传进度条
+  .image-tool__upload-progress {
+    height: 4px;
+    background-color: var(--tertiary-low);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 10px;
+    
+    .image-tool__upload-progress-bar {
+      height: 100%;
+      background-color: var(--tertiary);
+      transition: width 0.3s ease;
+    }
+  }
+}
+
+// 确保EditorJS样式与Discourse主题兼容
+.ce-block--selected .ce-block__content {
+  background: var(--highlight-low);
+}
+
+.codex-editor {
+  position: relative;
+  box-sizing: border-box;
+  z-index: 1;
+}
+
+.codex-editor__redactor {
+  padding-bottom: 100px !important;
+}
+
+// 移动端样式优化
+@media (max-width: 650px) {
+  .editorjs-container {
+    .ce-toolbar__plus {
+      left: 5px;
+    }
+    
+    .ce-toolbar__actions {
+      right: 5px;
+    }
+    
+    .ce-block__content {
+      padding: 0 5px;
+    }
+    
+    .ce-toolbox {
+      position: absolute;
+      left: 0;
+      right: 0;
+      margin-left: auto;
+      margin-right: auto;
+      width: 80%;
+      max-width: 300px;
+    }
+  }
+}
+
+// 强制隐藏加载中状态
+.cdx-loader {
+  display: none !important;
+}
+
+// 当图片真正显示时确保预加载器隐藏
+.image-tool .image-tool__image-picture + .image-tool__image-preloader {
+  display: none !important;
+} 

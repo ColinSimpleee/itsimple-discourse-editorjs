@@ -1,0 +1,12 @@
+zh_CN:
+  js:
+    discourse_editorjs:
+      toolbar:
+        bold_title: "粗体"
+        italic_title: "斜体"
+        link_title: "链接"
+        quote_title: "引用"
+        code_title: "代码"
+        image_title: "图片"
+        list_title: "列表"
+        heading_title: "标题" 
