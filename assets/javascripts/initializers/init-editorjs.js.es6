@@ -3,6 +3,7 @@ import loadScript from "discourse/lib/load-script";
 import I18n from "I18n";
 import { ajax } from "discourse/lib/ajax";
 import DemoTool from "../lib/editorjs-demo-tool";
+import VideoTool from "../discourse/lib/editorjs/tools/video-tool";
 
 // 调试辅助函数
 const DEBUG = true;
@@ -323,6 +324,11 @@ export default {
                   }
                 }
               },
+              // 添加视频工具
+              video: {
+                class: VideoTool,
+                inlineToolbar: true
+              },
               // 添加自定义 Demo 工具
               demo: {
                 class: DemoTool,
@@ -564,6 +570,18 @@ export default {
                 }
               });
             }
+            // 识别视频块
+            else if (paragraph.trim().startsWith("[video]")) {
+              blocks.push({
+                type: "video",
+                data: {
+                  videoId: "",
+                  playbackId: "",
+                  thumbnailUrl: "",
+                  duration: 0
+                }
+              });
+            }
             // 其他内容视为普通段落
             else if (paragraph.trim() !== "") {
               blocks.push({
@@ -634,6 +652,9 @@ export default {
                   markdown += `*${block.data.caption}*\n\n`;
                 }
                 break;
+              case "video":
+                markdown += `[video]\n\n`;
+                break;
               case "demo":
                 markdown += `[demo]\n\n`;
                 break;
@@ -652,4 +673,4 @@ export default {
       });
     });
   }
-}; 
+};

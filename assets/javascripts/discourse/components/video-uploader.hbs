@@ -1,0 +1,71 @@
+<div class="video-uploader">
+  {{#if this.videoId}}
+    {{#if this.videoStatus.state}}
+      <div class="video-status">
+        <div class="status-info">
+          {{#if (eq this.videoStatus.state "ready")}}
+            <div class="video-ready">
+              <div class="video-thumbnail">
+                <img src={{this.videoStatus.thumbnail_url}} alt="视频缩略图">
+              </div>
+              <div class="video-info">
+                <div class="video-title">{{this.videoFile.name}}</div>
+                <div class="video-duration">{{format-duration this.videoStatus.duration}}</div>
+              </div>
+            </div>
+          {{else if (eq this.videoStatus.state "preparing")}}
+            <div class="video-processing">
+              <div class="processing-message">视频正在处理中...</div>
+              <div class="spinner"></div>
+            </div>
+          {{else if (eq this.videoStatus.state "errored")}}
+            <div class="video-error">
+              <div class="error-message">视频处理失败</div>
+            </div>
+          {{/if}}
+        </div>
+      </div>
+    {{else}}
+      <div class="upload-progress">
+        <div class="progress-bar">
+          <div class="progress-fill" style="width: {{this.uploadProgress}}%"></div>
+        </div>
+        <div class="progress-text">上传中: {{this.uploadProgress}}%</div>
+      </div>
+    {{/if}}
+    <div class="upload-actions">
+      <DButton @action={{this.cancelUpload}} @icon="times" @label="取消" />
+    </div>
+  {{else}}
+    <div class="upload-form">
+      {{#if this.videoFile}}
+        <div class="file-info">
+          <div class="file-name">{{this.videoFile.name}}</div>
+          <div class="file-size">{{format-bytes this.videoFile.size}}</div>
+        </div>
+        <div class="upload-actions">
+          <DButton @action={{this.uploadVideo}} @icon="upload" @label="上传" class="btn-primary" />
+          <DButton @action={{this.cancelUpload}} @icon="times" @label="取消" />
+        </div>
+      {{else}}
+        <div class="file-selector">
+          <label for="video-file-input" class="file-select-button">
+            <DButton @icon="video" @label="选择视频文件" class="btn-primary" />
+          </label>
+          <input 
+            id="video-file-input" 
+            type="file" 
+            accept="video/mp4,video/webm,video/ogg" 
+            {{on "change" this.selectFile}}
+          />
+        </div>
+      {{/if}}
+    </div>
+  {{/if}}
+
+  {{#if this.errorMessage}}
+    <div class="error-message">
+      {{this.errorMessage}}
+    </div>
+  {{/if}}
+</div> 

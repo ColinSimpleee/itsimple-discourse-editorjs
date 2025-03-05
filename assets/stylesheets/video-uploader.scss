@@ -1,0 +1,139 @@
+.video-uploader {
+  margin: 10px 0;
+  padding: 15px;
+  border: 1px solid var(--primary-low);
+  border-radius: 4px;
+  background-color: var(--secondary);
+
+  .file-selector {
+    text-align: center;
+    padding: 20px 0;
+
+    input[type="file"] {
+      display: none;
+    }
+  }
+
+  .file-info {
+    margin-bottom: 15px;
+    
+    .file-name {
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+    
+    .file-size {
+      color: var(--primary-medium);
+      font-size: 0.9em;
+    }
+  }
+
+  .upload-actions {
+    display: flex;
+    justify-content: flex-start;
+    gap: 10px;
+    margin-top: 10px;
+  }
+
+  .upload-progress {
+    margin: 15px 0;
+    
+    .progress-bar {
+      height: 10px;
+      background-color: var(--primary-very-low);
+      border-radius: 5px;
+      overflow: hidden;
+      margin-bottom: 5px;
+      
+      .progress-fill {
+        height: 100%;
+        background-color: var(--tertiary);
+        transition: width 0.3s ease;
+      }
+    }
+    
+    .progress-text {
+      font-size: 0.9em;
+      color: var(--primary-medium);
+    }
+  }
+
+  .video-status {
+    margin: 15px 0;
+    
+    .video-ready {
+      display: flex;
+      align-items: center;
+      
+      .video-thumbnail {
+        width: 120px;
+        height: 67px;
+        margin-right: 15px;
+        border-radius: 4px;
+        overflow: hidden;
+        
+        img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+      }
+      
+      .video-info {
+        flex: 1;
+        
+        .video-title {
+          font-weight: bold;
+          margin-bottom: 5px;
+          word-break: break-word;
+        }
+        
+        .video-duration {
+          color: var(--primary-medium);
+          font-size: 0.9em;
+        }
+      }
+    }
+    
+    .video-processing {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      padding: 20px 0;
+      
+      .processing-message {
+        margin-bottom: 10px;
+      }
+      
+      .spinner {
+        width: 20px;
+        height: 20px;
+        border: 2px solid var(--primary-low);
+        border-top: 2px solid var(--tertiary);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+    }
+    
+    .video-error {
+      color: var(--danger);
+      padding: 10px;
+      background-color: var(--danger-low);
+      border-radius: 4px;
+    }
+  }
+
+  .error-message {
+    color: var(--danger);
+    margin-top: 10px;
+    padding: 10px;
+    background-color: var(--danger-low);
+    border-radius: 4px;
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+} 
