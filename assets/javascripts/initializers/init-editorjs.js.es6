@@ -36,7 +36,8 @@ export default {
             loadScript("https://cdn.jsdelivr.net/npm/@editorjs/delimiter@1.3.0"),
             loadScript("https://cdn.jsdelivr.net/npm/@editorjs/table@2.2.2"),
             loadScript("https://cdn.jsdelivr.net/npm/@editorjs/marker@1.3.0"),
-            loadScript("https://cdn.jsdelivr.net/npm/@editorjs/warning@1.3.0")
+            loadScript("https://cdn.jsdelivr.net/npm/@editorjs/warning@1.3.0"),
+            loadScript("https://cdn.jsdelivr.net/npm/@editorjs/embed@2.5.3")
           ]);
           
           log("EditorJS 和所有工具已成功加载");
@@ -287,9 +288,9 @@ export default {
                   captionPlaceholder: I18n.t('discourse_editorjs.image_caption_placeholder', { defaultValue: '图片说明' })
                 }
               },
-              delimiter: window.Delimiter && {
-                class: window.Delimiter
-              },
+              // delimiter: window.Delimiter && {
+              //   class: window.Delimiter
+              // },
               table: window.Table && {
                 class: window.Table,
                 inlineToolbar: true
@@ -298,9 +299,28 @@ export default {
                 class: window.Marker,
                 shortcut: 'CMD+SHIFT+M'
               },
-              warning: window.Warning && {
-                class: window.Warning,
-                inlineToolbar: true
+              // warning: window.Warning && {
+              //   class: window.Warning,
+              //   inlineToolbar: true
+              // },
+              embed: window.Embed && {
+                class: window.Embed,
+                inlineToolbar: true,
+                config: {
+                  services: {
+                    youtube: true,
+                    coub: true,
+                    codepen: true,
+                    imgur: true,
+                    gfycat: true,
+                    vimeo: true,
+                    twitter: true,
+                    instagram: true,
+                    twitch: true,
+                    miro: true,
+                    figma: true
+                  }
+                }
               }
             };
             
@@ -484,6 +504,24 @@ export default {
                 data: {}
               });
             }
+            // 识别嵌入内容 (iframe)
+            else if (/<iframe.*?src="(.*?)".*?><\/iframe>/.test(paragraph)) {
+              const match = paragraph.match(/<iframe.*?src="(.*?)".*?><\/iframe>/);
+              if (match) {
+                const captionMatch = paragraph.match(/<iframe.*?><\/iframe>\s*\*(.*?)\*/);
+                blocks.push({
+                  type: "embed",
+                  data: {
+                    service: "custom",
+                    source: match[1],
+                    embed: match[1],
+                    width: 600,
+                    height: 400,
+                    caption: captionMatch ? captionMatch[1] : ""
+                  }
+                });
+              }
+            }
             // 识别图片
             else if (/!\[.*?\]\(.*?\)/.test(paragraph)) {
               const match = paragraph.match(/!\[(.*?)\]\((.*?)\)/);
@@ -575,6 +613,12 @@ export default {
               case "warning":
                 markdown += "> **警告：** " + block.data.title + "\n>\n> " + block.data.message + "\n\n";
                 break;
+              case "embed":
+                markdown += `${block.data.embed}\n\n`;
+                if (block.data.caption) {
+                  markdown += `*${block.data.caption}*\n\n`;
+                }
+                break;
               default:
                 console.warn("未知的块类型:", block.type);
                 if (block.data.text) {
@@ -582,6 +626,8 @@ export default {
                 }
             }
           });
+
+          console.log(markdown);
           
           return markdown;
         }
