@@ -267,6 +267,7 @@
   border: 1px solid #e0e0e0;
   margin: 10px 0;
   text-align: center;
+  cursor: pointer;
   
   &__message {
     font-weight: bold;
@@ -278,6 +279,134 @@
     background-color: #f0f0f0;
     border-color: #ccc;
     transition: all 0.3s ease;
+  }
+}
+
+/* 模态框样式 */
+.demo-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  
+  &__content {
+    background-color: #fff;
+    border-radius: 8px;
+    padding: 20px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+    position: relative;
+  }
+  
+  &__close {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background-color: #f0f0f0;
+    border: none;
+    border-radius: 4px;
+    padding: 5px 10px;
+    cursor: pointer;
+    
+    &:hover {
+      background-color: #e0e0e0;
+    }
+  }
+  
+  &__upload-area {
+    margin-top: 20px;
+    border: 2px dashed #ccc;
+    border-radius: 5px;
+    padding: 30px;
+    text-align: center;
+    cursor: pointer;
+    
+    &.dragging {
+      border-color: #3490dc;
+      background-color: rgba(52, 144, 220, 0.05);
+    }
+    
+    &:hover {
+      border-color: #999;
+    }
+    
+    .upload-prompt {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      
+      svg {
+        width: 48px;
+        height: 48px;
+        margin-bottom: 15px;
+        color: #666;
+      }
+      
+      .upload-prompt-text {
+        font-size: 18px;
+        font-weight: bold;
+        margin-bottom: 10px;
+      }
+      
+      .upload-formats, .upload-size-limit {
+        font-size: 14px;
+        color: #666;
+        margin-bottom: 5px;
+      }
+    }
+    
+    .file-info {
+      p {
+        font-size: 16px;
+        margin-bottom: 15px;
+      }
+      
+      .upload-button {
+        background-color: #3490dc;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 8px 16px;
+        font-size: 16px;
+        cursor: pointer;
+        
+        &:hover {
+          background-color: #2779bd;
+        }
+      }
+    }
+    
+    .upload-progress {
+      width: 100%;
+      
+      .progress-bar {
+        width: 100%;
+        height: 20px;
+        background-color: #f0f0f0;
+        border-radius: 10px;
+        overflow: hidden;
+        margin-bottom: 10px;
+        
+        .progress-fill {
+          height: 100%;
+          background-color: #3490dc;
+          transition: width 0.3s ease;
+        }
+      }
+      
+      .progress-text {
+        font-size: 14px;
+        color: #666;
+      }
+    }
   }
 }
 
