@@ -13,7 +13,7 @@ class DemoTool {
 
   constructor({data, api}) {
     this.data = {
-      message: data.message || 'Hello World',
+      message: data.message || '添加视频',
       videoUrl: data.videoUrl || null
     };
     this.api = api;

@@ -24,7 +24,7 @@ export default {
         try {
           // 首先加载主库
           log("开始加载 EditorJS 主库");
-          await loadScript("https://cdn.jsdelivr.net/npm/@editorjs/editorjs@2.28.2");
+          await loadScript("https://cdn.jsdelivr.net/npm/@editorjs/editorjs@2.30.8");
           
           // 然后加载所有工具，指定版本
           log("加载 EditorJS 工具");
