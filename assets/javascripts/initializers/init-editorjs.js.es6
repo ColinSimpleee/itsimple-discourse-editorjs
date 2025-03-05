@@ -40,7 +40,8 @@ export default {
             loadScript("https://cdn.jsdelivr.net/npm/@editorjs/marker@1.3.0"),
             loadScript("https://cdn.jsdelivr.net/npm/@editorjs/warning@1.3.0"),
             loadScript("https://cdn.jsdelivr.net/npm/@editorjs/embed@2.5.3"),
-            loadScript("https://cdn.jsdelivr.net/npm/editorjs-drag-drop@1.1.13/dist/bundle.min.js")
+            loadScript("https://cdn.jsdelivr.net/npm/editorjs-drag-drop@1.1.13/dist/bundle.min.js"),
+            loadScript("https://cdn.jsdelivr.net/npm/editorjs-text-color-plugin@2.0.4/dist/bundle.js")
           ]);
           
           log("EditorJS 和所有工具已成功加载");
@@ -344,6 +345,24 @@ export default {
               demo: {
                 class: DemoTool,
                 inlineToolbar: false
+              },
+              // 添加文本颜色工具
+              Color: window.ColorPlugin && {
+                class: window.ColorPlugin,
+                config: {
+                  colorCollections: ['#EC7878','#9C27B0','#673AB7','#3F51B5','#0070FF','#03A9F4','#00BCD4','#4CAF50','#8BC34A','#CDDC39', '#FFF'],
+                  defaultColor: '#FF1300',
+                  type: 'text',
+                  customPicker: true
+                }
+              },
+              // 添加文本背景色工具
+              Marker: window.ColorPlugin && {
+                class: window.ColorPlugin,
+                config: {
+                  defaultColor: '#FFBF00',
+                  type: 'marker'
+                }
               }
             };
             
