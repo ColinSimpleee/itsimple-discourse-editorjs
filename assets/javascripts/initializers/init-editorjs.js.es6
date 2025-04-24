@@ -5,7 +5,7 @@ import { ajax } from "discourse/lib/ajax";
 import VideoTool from "../lib/video-tool";
 import PollTool from "../lib/poll-tool";
 
-// 调试辅助函数
+// Debug helper functions
 const DEBUG = true;
 function log(...args) {
   if (DEBUG) console.log("[EditorJS]", ...args);
@@ -19,15 +19,15 @@ export default {
   name: "discourse-editorjs",
   initialize(container) {
     withPluginApi("0.8.31", api => {
-      // 加载EditorJS库及其插件
+      // Load EditorJS library and its plugins
       const loadEditorJs = async () => {
         try {
-          // 首先加载主库
-          log("开始加载 EditorJS 主库");
+          // First load the main library
+          log("Loading EditorJS main library");
           await loadScript("https://cdn.jsdelivr.net/npm/@editorjs/editorjs@2.30.8");
 
-          // 然后加载所有工具，指定版本
-          log("加载 EditorJS 工具");
+          // Then load all tools with specified versions
+          log("Loading EditorJS tools");
           await Promise.all([
             loadScript("https://cdn.jsdelivr.net/npm/@editorjs/paragraph@2.10.0"),
             loadScript("https://cdn.jsdelivr.net/npm/@editorjs/header@2.7.0"),
@@ -44,18 +44,18 @@ export default {
             loadScript("https://cdn.jsdelivr.net/npm/editorjs-text-color-plugin@2.0.4/dist/bundle.js")
           ]);
 
-          log("EditorJS 和所有工具已成功加载");
+          log("EditorJS and all tools loaded successfully");
           return true;
         } catch (error) {
-          error("加载 EditorJS 失败:", error);
+          error("Failed to load EditorJS:", error);
           return false;
         }
       };
 
-      // 立即开始加载 EditorJS
+      // Immediately start loading EditorJS
       loadEditorJs();
 
-      // 重写编辑器组件
+      // Overwrite editor component
       api.modifyClass("component:d-editor", {
         editorJS: null,
         isEditorJSLoaded: false,
@@ -74,62 +74,62 @@ export default {
         },
 
         async _initEditorJS() {
-          // 如果EditorJS还没加载完成，稍后再试
+          // If EditorJS is not loaded yet, try again later
           if (typeof window.EditorJS === "undefined") {
-            log("等待 EditorJS 加载...");
+            log("Waiting for EditorJS to load...");
             setTimeout(() => this._initEditorJS(), 200);
             return;
           }
 
-          // 验证必要的工具类是否加载
+          // Validate that necessary tool classes are loaded
           if (!window.Paragraph) {
-            log("等待 Paragraph 工具加载...");
+            log("Waiting for Paragraph tool to load...");
             setTimeout(() => this._initEditorJS(), 200);
             return;
           }
 
           if (!window.Header) {
-            log("等待 Header 工具加载...");
+            log("Waiting for Header tool to load...");
             setTimeout(() => this._initEditorJS(), 200);
             return;
           }
 
-          // 创建EditorJS实例
+          // Create EditorJS instance
           const editorContainer = document.createElement("div");
           editorContainer.id = `editorjs-container-${this.elementId}`;
           editorContainer.className = "editorjs-container";
 
-          // 隐藏原来的编辑器
+          // Hide original editor
           const originalEditor = this.element.querySelector(".d-editor-input");
           if (!originalEditor) {
-            error("找不到原始编辑器");
+            error("Original editor not found");
             return;
           }
 
           originalEditor.style.display = "none";
 
-          // 隐藏原生工具栏
+          // Hide native toolbar
           const originalToolbar = this.element.querySelector(".d-editor-button-bar");
           if (originalToolbar) {
             originalToolbar.style.display = "none";
-            log("已隐藏原生工具栏");
+            log("Native toolbar hidden");
           } else {
-            error("找不到原生工具栏");
+            error("Native toolbar not found");
           }
 
           originalEditor.insertAdjacentElement("afterend", editorContainer);
 
           try {
-            log("开始初始化 EditorJS");
+            log("Starting EditorJS initialization");
 
-            // 获取上传管理器
+            // Get upload manager
             const uploadManager = this.uploadManager || container.lookup("service:upload-manager");
             const store = container.lookup("service:store");
             if (!uploadManager) {
-              error("无法获取上传管理器服务");
+              error("Upload manager service not available");
             }
 
-            // 定义可用工具
+            // Define available tools
             const tools = {
               paragraph: window.Paragraph && {
                 class: window.Paragraph,
@@ -161,53 +161,53 @@ export default {
                 config: {
                   uploader: {
                     uploadByFile: (file) => {
-                      log("开始上传图片:", file.name, "大小:", Math.round(file.size/1024), "KB");
+                      log("Starting image upload:", file.name, "size:", Math.round(file.size/1024), "KB");
 
-                      // 实现Discourse上传
+                      // Implement Discourse upload
                       return new Promise((resolve, reject) => {
                         try {
                           if (uploadManager) {
-                            // 使用上传管理器
-                            log("使用上传管理器服务");
+                            // Use upload manager
+                            log("Using upload manager service");
                             const upload = uploadManager.createUpload(store, {
                               file,
                               type: "composer"
                             });
 
                             upload.start().then(response => {
-                              log("上传管理器上传成功:", response);
+                              log("Upload manager upload success:", response);
                               let imageUrl = response.url;
                               if (imageUrl.startsWith('//')) {
                                 imageUrl = window.location.protocol + imageUrl;
                               }
-                              log("生成的图片URL:", imageUrl);
+                              log("Generated image URL:", imageUrl);
 
-                              // 修复加载状态问题 - 确保完整的success对象结构
+                              // Fix loading state issues - ensure complete success object structure
                               resolve({
                                 success: 1,
                                 file: {
                                   url: imageUrl,
-                                  // 添加宽高信息
+                                  // Add width and height information
                                   width: response.width || 0,
                                   height: response.height || 0,
-                                  // 添加扩展名信息
+                                  // Add extension information
                                   extension: response.extension || "",
                                   name: response.original_filename || file.name,
                                   size: response.filesize || file.size
                                 }
                               });
 
-                              // 手动处理加载状态
+                              // Manually handle loading state
                               setTimeout(() => {
                                 try {
-                                  // 尝试找到并隐藏所有加载状态元素
+                                  // Try to find and hide all loading state elements
                                   const preloaders = document.querySelectorAll('.image-tool__image-preloader');
                                   if (preloaders && preloaders.length > 0) {
-                                    log("找到", preloaders.length, "个预加载器元素，尝试隐藏");
+                                    log("Found", preloaders.length, "preloader elements, attempting to hide");
                                     preloaders.forEach(el => {
                                       el.style.display = 'none';
                                       el.classList.add('image-tool__image-preloader--hidden');
-                                      // 尝试找到父元素并添加loaded类
+                                      // Try to find parent element and add loaded class
                                       const parent = el.closest('.image-tool');
                                       if (parent) {
                                         parent.classList.add('image-tool--loaded');
@@ -215,16 +215,16 @@ export default {
                                     });
                                   }
                                 } catch (e) {
-                                  error("尝试手动隐藏加载状态失败:", e);
+                                  error("Failed to manually hide loading state:", e);
                                 }
                               }, 500);
                             }).catch(err => {
-                              error("上传管理器上传失败:", err);
+                              error("Upload manager upload failed:", err);
                               reject(err);
                             });
                           } else {
-                            // 回退方案：直接使用AJAX上传
-                            log("上传管理器不可用，使用AJAX上传");
+                            // Fallback: Use AJAX upload directly
+                            log("Upload manager unavailable, using AJAX upload");
                             const data = new FormData();
                             data.append("type", "composer");
                             data.append("files[]", file);
@@ -236,42 +236,42 @@ export default {
                               contentType: false
                             })
                             .then(response => {
-                              log("API返回:", response);
-                              // 响应数据可能直接是上传对象，不需要.url检查
+                              log("API response:", response);
+                              // Response data might directly be the upload object, no need for .url check
                               if (response) {
-                                // 处理相对URL，确保有协议前缀
+                                // Handle relative URLs, ensure protocol prefix
                                 let imageUrl = response.url || "";
                                 if (imageUrl.startsWith('//')) {
                                   imageUrl = window.location.protocol + imageUrl;
                                 }
-                                log("生成的图片URL:", imageUrl);
+                                log("Generated image URL:", imageUrl);
 
-                                // 提供完整的图片数据结构
+                                // Provide complete image data structure
                                 resolve({
                                   success: 1,
                                   file: {
                                     url: imageUrl,
-                                    // 添加宽高信息
+                                    // Add width and height information
                                     width: response.width || 0,
                                     height: response.height || 0,
-                                    // 添加扩展名信息
+                                    // Add extension information
                                     extension: response.extension || "",
                                     name: response.original_filename || file.name,
                                     size: response.filesize || file.size
                                   }
                                 });
 
-                                // 手动处理加载状态
+                                // Manually handle loading state
                                 setTimeout(() => {
                                   try {
-                                    // 尝试找到并隐藏所有加载状态元素
+                                    // Try to find and hide all loading state elements
                                     const preloaders = document.querySelectorAll('.image-tool__image-preloader');
                                     if (preloaders && preloaders.length > 0) {
-                                      log("找到", preloaders.length, "个预加载器元素，尝试隐藏");
+                                      log("Found", preloaders.length, "preloader elements, attempting to hide");
                                       preloaders.forEach(el => {
                                         el.style.display = 'none';
                                         el.classList.add('image-tool__image-preloader--hidden');
-                                        // 尝试找到父元素并添加loaded类
+                                        // Try to find parent element and add loaded class
                                         const parent = el.closest('.image-tool');
                                         if (parent) {
                                           parent.classList.add('image-tool--loaded');
@@ -279,27 +279,27 @@ export default {
                                       });
                                     }
                                   } catch (e) {
-                                    error("尝试手动隐藏加载状态失败:", e);
+                                    error("Failed to manually hide loading state:", e);
                                   }
                                 }, 500);
                               } else {
-                                error("API返回数据无效:", response);
-                                reject(new Error("上传返回数据无效"));
+                                error("Invalid API response data:", response);
+                                reject(new Error("Invalid upload response data"));
                               }
                             })
                             .catch(err => {
-                              error("AJAX上传失败:", err);
+                              error("AJAX upload failed:", err);
                               reject(err);
                             });
                           }
                         } catch (err) {
-                          error("上传过程中出现异常:", err);
+                          error("Exception during upload process:", err);
                           reject(err);
                         }
                       });
                     }
                   },
-                  captionPlaceholder: I18n.t('discourse_editorjs.image_caption_placeholder', { defaultValue: '图片说明' })
+                  captionPlaceholder: I18n.t('discourse_editorjs.image_caption_placeholder', { defaultValue: 'Image caption' })
                 }
               },
               // delimiter: window.Delimiter && {
@@ -336,12 +336,12 @@ export default {
                   }
                 }
               },
-              // 添加视频工具
+              // Add video tool
               video: {
                 class: VideoTool,
                 inlineToolbar: true
               },
-              // 添加文本颜色工具
+              // Add text color tool
               Color: window.ColorPlugin && {
                 class: window.ColorPlugin,
                 config: {
@@ -351,7 +351,7 @@ export default {
                   customPicker: true
                 }
               },
-              // 添加文本背景色工具
+              // Add text background color tool
               Marker: window.ColorPlugin && {
                 class: window.ColorPlugin,
                 config: {
@@ -359,14 +359,14 @@ export default {
                   type: 'marker'
                 }
               },
-              // 添加投票工具
+              // Add poll tool
               poll: PollTool && {
                 class: PollTool,
                 inlineToolbar: true
               }
             };
 
-            // 过滤出有效的工具
+            // Filter out valid tools
             const validTools = {};
             Object.keys(tools).forEach(toolName => {
               if (tools[toolName]) {
@@ -374,9 +374,9 @@ export default {
               }
             });
 
-            log("加载的有效工具:", Object.keys(validTools));
+            log("Loaded valid tools:", Object.keys(validTools));
 
-            // 初始化EditorJS
+            // Initialize EditorJS
             this.editorJS = new window.EditorJS({
               holder: editorContainer.id,
               placeholder: I18n.t("composer.reply_placeholder"),
@@ -386,42 +386,42 @@ export default {
                 this._syncContent();
               },
               data: this._parseMarkdownToBlocks(this.value || ""),
-              // 添加 DragDrop 插件配置
+              // Add DragDrop plugin configuration
               onReady: () => {
-                // 检查 DragDrop 插件是否加载成功
+                // Check if DragDrop plugin loaded successfully
                 if (window.DragDrop) {
-                  log("初始化 DragDrop 插件");
+                  log("Initializing DragDrop plugin");
                   new window.DragDrop(this.editorJS);
                 } else {
-                  error("DragDrop 插件未加载成功");
+                  error("DragDrop plugin failed to load");
                 }
               }
             });
 
-            // 添加图片块渲染后处理
+            // Add post-rendering processing for image blocks
             this.editorJS.isReady.then(() => {
-              log("EditorJS 准备就绪，添加图片加载监听");
+              log("EditorJS ready, adding image load listeners");
 
-              // 监听图片块添加
+              // Monitor image block additions
               document.addEventListener('DOMNodeInserted', function(e) {
                 try {
-                  // 检查是否有新的图片预加载器添加
+                  // Check if a new image preloader is added
                   if (e.target && e.target.classList && e.target.classList.contains('image-tool__image-preloader')) {
-                    log("检测到新的图片预加载器添加");
+                    log("New image preloader detected");
 
-                    // 查找可能已加载完成的图片
+                    // Look for possibly already loaded images
                     const parent = e.target.closest('.image-tool');
                     if (parent) {
                       const image = parent.querySelector('.image-tool__image-picture');
                       if (image && image.complete) {
-                        log("图片已加载完成，隐藏预加载器");
+                        log("Image already loaded, hiding preloader");
                         e.target.style.display = 'none';
                         e.target.classList.add('image-tool__image-preloader--hidden');
                         parent.classList.add('image-tool--loaded');
                       } else if (image) {
-                        // 添加图片加载完成事件
+                        // Add image load complete event
                         image.addEventListener('load', function() {
-                          log("图片加载完成事件触发，隐藏预加载器");
+                          log("Image load event triggered, hiding preloader");
                           const preloader = parent.querySelector('.image-tool__image-preloader');
                           if (preloader) {
                             preloader.style.display = 'none';
@@ -433,19 +433,19 @@ export default {
                     }
                   }
                 } catch (err) {
-                  error("处理图片加载完成事件出错:", err);
+                  error("Error processing image load complete event:", err);
                 }
               });
             }).catch(err => {
-              error("EditorJS 初始化就绪失败:", err);
+              error("EditorJS initialization ready failed:", err);
             });
 
             this.isEditorJSLoaded = true;
-            log("EditorJS 初始化成功");
+            log("EditorJS initialized successfully");
           } catch (err) {
-            error("初始化 EditorJS 失败:", err);
-            error("错误详情:", err.stack);
-            // 如果初始化失败，恢复原来的编辑器
+            error("EditorJS initialization failed:", err);
+            error("Error details:", err.stack);
+            // If initialization fails, restore the original editor
             originalEditor.style.display = "";
           }
         },
@@ -454,28 +454,28 @@ export default {
           if (!this.editorJS) return;
 
           this.editorJS.save().then(data => {
-            // 将EditorJS内容转换为Markdown
+            // Convert EditorJS content to Markdown
             const markdown = this._convertToMarkdown(data);
             this.set("value", markdown);
           }).catch(err => {
-            error("保存 EditorJS 内容失败:", err);
+            error("Failed to save EditorJS content:", err);
           });
         },
 
         _parseMarkdownToBlocks(markdown) {
           if (!markdown) return { blocks: [] };
 
-          // 更高级的Markdown到EditorJS Blocks的转换
+          // Advanced Markdown to EditorJS Blocks conversion
           const blocks = [];
 
-          // 分割文本为段落
+          // Split text into paragraphs
           const paragraphs = markdown.split(/\n{2,}/);
 
           paragraphs.forEach(paragraph => {
             const lines = paragraph.split("\n");
             const firstLine = lines[0].trim();
 
-            // 识别标题
+            // Identify headers
             if (firstLine.startsWith("# ")) {
               blocks.push({
                 type: "header",
@@ -509,7 +509,7 @@ export default {
                 }
               });
             }
-            // 识别无序列表
+            // Identify unordered lists
             else if (lines.every(line => line.trim().startsWith("- "))) {
               blocks.push({
                 type: "list",
@@ -519,7 +519,7 @@ export default {
                 }
               });
             }
-            // 识别有序列表
+            // Identify ordered lists
             else if (lines.every(line => /^\d+\.\s/.test(line.trim()))) {
               blocks.push({
                 type: "list",
@@ -529,7 +529,7 @@ export default {
                 }
               });
             }
-            // 识别引用
+            // Identify quotes
             else if (lines.every(line => line.trim().startsWith("> "))) {
               blocks.push({
                 type: "quote",
@@ -539,7 +539,7 @@ export default {
                 }
               });
             }
-            // 识别代码块
+            // Identify code blocks
             else if (paragraph.startsWith("```") && paragraph.endsWith("```")) {
               const code = paragraph.substring(3, paragraph.length - 3).trim();
               blocks.push({
@@ -549,14 +549,14 @@ export default {
                 }
               });
             }
-            // 识别分隔线
+            // Identify separator
             else if (paragraph.trim() === "---") {
               blocks.push({
                 type: "delimiter",
                 data: {}
               });
             }
-            // 识别嵌入内容 (iframe)
+            // Identify embedded content (iframe)
             else if (/<iframe.*?src="(.*?)".*?><\/iframe>/.test(paragraph)) {
               const match = paragraph.match(/<iframe.*?src="(.*?)".*?><\/iframe>/);
               if (match) {
@@ -574,7 +574,7 @@ export default {
                 });
               }
             }
-            // 识别图片
+            // Identify images
             else if (/!\[.*?\]\(.*?\)/.test(paragraph)) {
               const match = paragraph.match(/!\[(.*?)\]\((.*?)\)/);
               if (match) {
@@ -589,7 +589,7 @@ export default {
                 });
               }
             }
-            // 识别链接
+            // Identify links
             else if (/\[.*?\]\(.*?\)/.test(paragraph) && !/!\[.*?\]\(.*?\)/.test(paragraph)) {
               const match = paragraph.match(/\[(.*?)\]\((.*?)\)/);
               if (match) {
@@ -601,7 +601,7 @@ export default {
                 });
               }
             }
-            // 识别视频块
+            // Identify video blocks
             else if (paragraph.trim().startsWith("[video]")) {
               blocks.push({
                 type: "video",
@@ -613,9 +613,9 @@ export default {
                 }
               });
             }
-            // 识别投票块
+            // Identify poll blocks
             else if (/\[poll.*?\]/.test(paragraph)) {
-              // 解析投票标签
+              // Parse poll tag
               const pollBlock = {
                 type: "poll",
                 data: {
@@ -626,24 +626,24 @@ export default {
                 }
               };
 
-              // 尝试提取投票名称
+              // Try to extract poll name
               const nameMatch = paragraph.match(/\[poll.*?name\s*=\s*["']?([^"'\s\]]+)["']?/i);
               if (nameMatch) {
                 pollBlock.data.pollName = nameMatch[1];
               }
 
-              // 尝试提取投票类型
+              // Try to extract poll type
               const typeMatch = paragraph.match(/\[poll.*?type\s*=\s*["']?([^"'\s\]]+)["']?/i);
               if (typeMatch) {
                 pollBlock.data.pollType = typeMatch[1];
               }
 
-              // 尝试提取投票标题
+              // Try to extract poll title
               if (lines.length > 1 && lines[1].trim().startsWith("# ")) {
                 pollBlock.data.pollTitle = lines[1].trim().substring(2);
               }
 
-              // 尝试提取投票选项
+              // Try to extract poll options
               for (let i = 1; i < lines.length; i++) {
                 const line = lines[i].trim();
                 if (line.startsWith("* ") || line.startsWith("- ")) {
@@ -653,7 +653,7 @@ export default {
 
               blocks.push(pollBlock);
             }
-            // 其他内容视为普通段落
+            // Other content as regular paragraphs
             else if (paragraph.trim() !== "") {
               blocks.push({
                 type: "paragraph",
@@ -668,7 +668,7 @@ export default {
         },
 
         _convertToMarkdown(data) {
-          // 将EditorJS内容转换为Markdown
+          // Convert EditorJS content to Markdown
           let markdown = "";
 
           if (!data || !data.blocks) return markdown;
@@ -703,11 +703,11 @@ export default {
                 break;
               case "table":
                 if (block.data.content) {
-                  // 表头
+                  // Header
                   markdown += "| " + block.data.content[0].join(" | ") + " |\n";
-                  // 分隔线
+                  // Separator
                   markdown += "| " + block.data.content[0].map(() => "---").join(" | ") + " |\n";
-                  // 表内容
+                  // Table content
                   for (let i = 1; i < block.data.content.length; i++) {
                     markdown += "| " + block.data.content[i].join(" | ") + " |\n";
                   }
@@ -715,7 +715,7 @@ export default {
                 }
                 break;
               case "warning":
-                markdown += "> **警告：** " + block.data.title + "\n>\n> " + block.data.message + "\n\n";
+                markdown += "> **Warning:** " + block.data.title + "\n>\n> " + block.data.message + "\n\n";
                 break;
               case "embed":
                 markdown += `${block.data.embed}\n\n`;
@@ -727,34 +727,28 @@ export default {
                 markdown += `[video]\n\n`;
                 break;
               case "poll":
-                // 构建投票Markdown
+                // Build poll Markdown
                 let pollMarkdown = "[poll";
 
-                // 添加投票名称
+                // Add poll name
                 if (block.data.pollName) {
                   pollMarkdown += ` name="${block.data.pollName}"`;
                 }
 
-                // 添加投票类型
+                // Add poll type
                 if (block.data.pollType && block.data.pollType !== "regular") {
                   pollMarkdown += ` type=${block.data.pollType}`;
-                  
-                  // 为数字评分类型添加必要参数
-                  if (block.data.pollType === "number") {
-                    // 默认的数字评分范围 1-10
-                    pollMarkdown += ` min=1 max=10 step=1`;
-                  }
                 }
 
                 pollMarkdown += "]\n";
 
-                // 添加投票标题
+                // Add poll title
                 if (block.data.pollTitle) {
                   pollMarkdown += `# ${block.data.pollTitle}\n`;
                 }
 
-                // 添加投票选项 (对于数字评分类型不需要选项)
-                if (block.data.pollType !== "number" && block.data.pollOptions && block.data.pollOptions.length > 0) {
+                // Add poll options
+                if (block.data.pollOptions && block.data.pollOptions.length > 0) {
                   block.data.pollOptions.forEach(option => {
                     pollMarkdown += `* ${option}\n`;
                   });
@@ -765,7 +759,7 @@ export default {
                 break;
 
               default:
-                console.warn("未知的块类型:", block.type);
+                console.warn("Unknown block type:", block.type);
                 if (block.data.text) {
                   markdown += block.data.text + "\n\n";
                 }
