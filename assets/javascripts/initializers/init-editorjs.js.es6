@@ -25,7 +25,7 @@ export default {
           // 首先加载主库
           log("开始加载 EditorJS 主库");
           await loadScript("https://cdn.jsdelivr.net/npm/@editorjs/editorjs@2.30.8");
-          
+
           // 然后加载所有工具，指定版本
           log("加载 EditorJS 工具");
           await Promise.all([
@@ -43,7 +43,7 @@ export default {
             loadScript("https://cdn.jsdelivr.net/npm/editorjs-drag-drop@1.1.13/dist/bundle.min.js"),
             loadScript("https://cdn.jsdelivr.net/npm/editorjs-text-color-plugin@2.0.4/dist/bundle.js")
           ]);
-          
+
           log("EditorJS 和所有工具已成功加载");
           return true;
         } catch (error) {
@@ -51,20 +51,20 @@ export default {
           return false;
         }
       };
-      
+
       // 立即开始加载 EditorJS
       loadEditorJs();
-      
+
       // 重写编辑器组件
       api.modifyClass("component:d-editor", {
         editorJS: null,
         isEditorJSLoaded: false,
-        
+
         didInsertElement() {
           this._super(...arguments);
           this._initEditorJS();
         },
-        
+
         willDestroyElement() {
           this._super(...arguments);
           if (this.editorJS) {
@@ -72,7 +72,7 @@ export default {
             this.editorJS = null;
           }
         },
-        
+
         async _initEditorJS() {
           // 如果EditorJS还没加载完成，稍后再试
           if (typeof window.EditorJS === "undefined") {
@@ -80,34 +80,34 @@ export default {
             setTimeout(() => this._initEditorJS(), 200);
             return;
           }
-          
+
           // 验证必要的工具类是否加载
           if (!window.Paragraph) {
             log("等待 Paragraph 工具加载...");
             setTimeout(() => this._initEditorJS(), 200);
             return;
           }
-          
+
           if (!window.Header) {
             log("等待 Header 工具加载...");
             setTimeout(() => this._initEditorJS(), 200);
             return;
           }
-          
+
           // 创建EditorJS实例
           const editorContainer = document.createElement("div");
           editorContainer.id = `editorjs-container-${this.elementId}`;
           editorContainer.className = "editorjs-container";
-          
+
           // 隐藏原来的编辑器
           const originalEditor = this.element.querySelector(".d-editor-input");
           if (!originalEditor) {
             error("找不到原始编辑器");
             return;
           }
-          
+
           originalEditor.style.display = "none";
-          
+
           // 隐藏原生工具栏
           const originalToolbar = this.element.querySelector(".d-editor-button-bar");
           if (originalToolbar) {
@@ -116,19 +116,19 @@ export default {
           } else {
             error("找不到原生工具栏");
           }
-          
+
           originalEditor.insertAdjacentElement("afterend", editorContainer);
-          
+
           try {
             log("开始初始化 EditorJS");
-            
+
             // 获取上传管理器
             const uploadManager = this.uploadManager || container.lookup("service:upload-manager");
             const store = container.lookup("service:store");
             if (!uploadManager) {
               error("无法获取上传管理器服务");
             }
-            
+
             // 定义可用工具
             const tools = {
               paragraph: window.Paragraph && {
@@ -162,7 +162,7 @@ export default {
                   uploader: {
                     uploadByFile: (file) => {
                       log("开始上传图片:", file.name, "大小:", Math.round(file.size/1024), "KB");
-                      
+
                       // 实现Discourse上传
                       return new Promise((resolve, reject) => {
                         try {
@@ -173,7 +173,7 @@ export default {
                               file,
                               type: "composer"
                             });
-                            
+
                             upload.start().then(response => {
                               log("上传管理器上传成功:", response);
                               let imageUrl = response.url;
@@ -181,7 +181,7 @@ export default {
                                 imageUrl = window.location.protocol + imageUrl;
                               }
                               log("生成的图片URL:", imageUrl);
-                              
+
                               // 修复加载状态问题 - 确保完整的success对象结构
                               resolve({
                                 success: 1,
@@ -196,7 +196,7 @@ export default {
                                   size: response.filesize || file.size
                                 }
                               });
-                              
+
                               // 手动处理加载状态
                               setTimeout(() => {
                                 try {
@@ -228,7 +228,7 @@ export default {
                             const data = new FormData();
                             data.append("type", "composer");
                             data.append("files[]", file);
-                            
+
                             ajax("/uploads.json", {
                               type: "POST",
                               data,
@@ -260,7 +260,7 @@ export default {
                                     size: response.filesize || file.size
                                   }
                                 });
-                                
+
                                 // 手动处理加载状态
                                 setTimeout(() => {
                                   try {
@@ -365,7 +365,7 @@ export default {
                 inlineToolbar: true
               }
             };
-            
+
             // 过滤出有效的工具
             const validTools = {};
             Object.keys(tools).forEach(toolName => {
@@ -373,9 +373,9 @@ export default {
                 validTools[toolName] = tools[toolName];
               }
             });
-            
+
             log("加载的有效工具:", Object.keys(validTools));
-            
+
             // 初始化EditorJS
             this.editorJS = new window.EditorJS({
               holder: editorContainer.id,
@@ -397,18 +397,18 @@ export default {
                 }
               }
             });
-            
+
             // 添加图片块渲染后处理
             this.editorJS.isReady.then(() => {
               log("EditorJS 准备就绪，添加图片加载监听");
-              
+
               // 监听图片块添加
               document.addEventListener('DOMNodeInserted', function(e) {
                 try {
                   // 检查是否有新的图片预加载器添加
                   if (e.target && e.target.classList && e.target.classList.contains('image-tool__image-preloader')) {
                     log("检测到新的图片预加载器添加");
-                    
+
                     // 查找可能已加载完成的图片
                     const parent = e.target.closest('.image-tool');
                     if (parent) {
@@ -439,7 +439,7 @@ export default {
             }).catch(err => {
               error("EditorJS 初始化就绪失败:", err);
             });
-            
+
             this.isEditorJSLoaded = true;
             log("EditorJS 初始化成功");
           } catch (err) {
@@ -449,10 +449,10 @@ export default {
             originalEditor.style.display = "";
           }
         },
-        
+
         _syncContent() {
           if (!this.editorJS) return;
-          
+
           this.editorJS.save().then(data => {
             // 将EditorJS内容转换为Markdown
             const markdown = this._convertToMarkdown(data);
@@ -461,20 +461,20 @@ export default {
             error("保存 EditorJS 内容失败:", err);
           });
         },
-        
+
         _parseMarkdownToBlocks(markdown) {
           if (!markdown) return { blocks: [] };
-          
+
           // 更高级的Markdown到EditorJS Blocks的转换
           const blocks = [];
-          
+
           // 分割文本为段落
           const paragraphs = markdown.split(/\n{2,}/);
-          
+
           paragraphs.forEach(paragraph => {
             const lines = paragraph.split("\n");
             const firstLine = lines[0].trim();
-            
+
             // 识别标题
             if (firstLine.startsWith("# ")) {
               blocks.push({
@@ -508,7 +508,7 @@ export default {
                   level: 4
                 }
               });
-            } 
+            }
             // 识别无序列表
             else if (lines.every(line => line.trim().startsWith("- "))) {
               blocks.push({
@@ -663,16 +663,16 @@ export default {
               });
             }
           });
-          
+
           return { blocks };
         },
-        
+
         _convertToMarkdown(data) {
           // 将EditorJS内容转换为Markdown
           let markdown = "";
-          
+
           if (!data || !data.blocks) return markdown;
-          
+
           data.blocks.forEach(block => {
             switch (block.type) {
               case "header":
@@ -729,35 +729,35 @@ export default {
               case "poll":
                 // 构建投票Markdown
                 let pollMarkdown = "[poll";
-                
+
                 // 添加投票名称
                 if (block.data.pollName) {
                   pollMarkdown += ` name="${block.data.pollName}"`;
                 }
-                
+
                 // 添加投票类型
                 if (block.data.pollType && block.data.pollType !== "regular") {
                   pollMarkdown += ` type=${block.data.pollType}`;
                 }
-                
+
                 pollMarkdown += "]\n";
-                
+
                 // 添加投票标题
                 if (block.data.pollTitle) {
                   pollMarkdown += `# ${block.data.pollTitle}\n`;
                 }
-                
+
                 // 添加投票选项
                 if (block.data.pollOptions && block.data.pollOptions.length > 0) {
                   block.data.pollOptions.forEach(option => {
                     pollMarkdown += `* ${option}\n`;
                   });
                 }
-                
+
                 pollMarkdown += "[/poll]\n\n";
                 markdown += pollMarkdown;
                 break;
-             
+
               default:
                 console.warn("未知的块类型:", block.type);
                 if (block.data.text) {
@@ -767,7 +767,7 @@ export default {
           });
 
           console.log(markdown);
-          
+
           return markdown;
         }
       });

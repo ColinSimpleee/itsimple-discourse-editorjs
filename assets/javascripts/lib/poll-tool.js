@@ -35,108 +35,133 @@ export default class PollTool {
   }
 
   render() {
-    this.container = document.createElement("div");
-    this.container.classList.add("editorjs-poll-tool");
+    this.container = document.createElement('div');
+    this.container.classList.add('editorjs-poll-tool');
 
-    // 创建表单界面
+    // 渲染表单
     this._renderForm();
 
     return this.container;
   }
 
   _renderForm() {
-    // 创建标题输入
-    const titleContainer = document.createElement("div");
-    titleContainer.classList.add("poll-tool-field");
-    
-    const titleLabel = document.createElement("label");
-    titleLabel.textContent = "投票标题：";
-    titleLabel.classList.add("poll-tool-label");
-    
-    const titleInput = document.createElement("input");
-    titleInput.classList.add("poll-tool-input");
-    titleInput.value = this.data.pollTitle;
-    titleInput.placeholder = "添加投票标题";
-    titleInput.addEventListener("input", () => {
+    // 创建投票标题字段
+    const titleField = document.createElement('div');
+    titleField.classList.add('poll-tool-field');
+
+    const titleLabel = document.createElement('label');
+    titleLabel.classList.add('poll-tool-label');
+    titleLabel.textContent = '投票标题';
+    titleField.appendChild(titleLabel);
+
+    const titleInput = document.createElement('input');
+    titleInput.classList.add('poll-tool-input');
+    titleInput.value = this.data.pollTitle || '';
+    titleInput.placeholder = '输入投票标题';
+    titleInput.addEventListener('input', () => {
       this.data.pollTitle = titleInput.value;
     });
-    
-    titleContainer.appendChild(titleLabel);
-    titleContainer.appendChild(titleInput);
-    this.container.appendChild(titleContainer);
+    titleField.appendChild(titleInput);
+    this.container.appendChild(titleField);
 
-    // 创建类型选择
-    const typeContainer = document.createElement("div");
-    typeContainer.classList.add("poll-tool-field");
-    
-    const typeLabel = document.createElement("label");
-    typeLabel.textContent = "投票类型：";
-    typeLabel.classList.add("poll-tool-label");
-    
-    const typeSelect = document.createElement("select");
-    typeSelect.classList.add("poll-tool-select");
-    typeSelect.value = this.data.pollType;
-    
-    const typeOptions = [
-      { value: 'regular', text: '单选' },
-      { value: 'multiple', text: '多选' },
-      { value: 'number', text: '数字评分' }
-    ];
-    
-    typeOptions.forEach(option => {
-      const optionEl = document.createElement("option");
-      optionEl.value = option.value;
-      optionEl.textContent = option.text;
-      if (option.value === this.data.pollType) {
-        optionEl.selected = true;
-      }
-      typeSelect.appendChild(optionEl);
+    // 创建投票名称字段
+    const nameField = document.createElement('div');
+    nameField.classList.add('poll-tool-field');
+
+    const nameLabel = document.createElement('label');
+    nameLabel.classList.add('poll-tool-label');
+    nameLabel.textContent = '投票名称（可选）';
+    nameField.appendChild(nameLabel);
+
+    const nameInput = document.createElement('input');
+    nameInput.classList.add('poll-tool-input');
+    nameInput.value = this.data.pollName || '';
+    nameInput.placeholder = '输入投票名称（用于区分多个投票）';
+    nameInput.addEventListener('input', () => {
+      this.data.pollName = nameInput.value;
     });
-    
-    typeSelect.addEventListener("change", () => {
+    nameField.appendChild(nameInput);
+    this.container.appendChild(nameField);
+
+    // 创建投票类型字段
+    const typeField = document.createElement('div');
+    typeField.classList.add('poll-tool-field');
+
+    const typeLabel = document.createElement('label');
+    typeLabel.classList.add('poll-tool-label');
+    typeLabel.textContent = '投票类型';
+    typeField.appendChild(typeLabel);
+
+    const typeSelect = document.createElement('select');
+    typeSelect.classList.add('poll-tool-select');
+
+    const regularOption = document.createElement('option');
+    regularOption.value = 'regular';
+    regularOption.textContent = '单选';
+    regularOption.selected = this.data.pollType === 'regular' || !this.data.pollType;
+    typeSelect.appendChild(regularOption);
+
+    const multipleOption = document.createElement('option');
+    multipleOption.value = 'multiple';
+    multipleOption.textContent = '多选';
+    multipleOption.selected = this.data.pollType === 'multiple';
+    typeSelect.appendChild(multipleOption);
+
+    const numberOption = document.createElement('option');
+    numberOption.value = 'number';
+    numberOption.textContent = '数字评分';
+    numberOption.selected = this.data.pollType === 'number';
+    typeSelect.appendChild(numberOption);
+
+    typeSelect.addEventListener('change', () => {
       this.data.pollType = typeSelect.value;
-      // 重新渲染表单，以更新选项部分
+
+      // 为数字评分初始化默认值
+      if (this.data.pollType === 'number' && (!this.data.pollOptions || this.data.pollOptions.length === 0)) {
+        this.data.pollOptions = [];
+      } else if (this.data.pollType !== 'number' && (!this.data.pollOptions || this.data.pollOptions.length < 2)) {
+        this.data.pollOptions = ['', ''];
+      }
+
+      // 重新渲染表单
       this.container.innerHTML = '';
       this._renderForm();
     });
-    
-    typeContainer.appendChild(typeLabel);
-    typeContainer.appendChild(typeSelect);
-    this.container.appendChild(typeContainer);
 
-    // 根据投票类型渲染不同的选项输入方式
+    typeField.appendChild(typeSelect);
+    this.container.appendChild(typeField);
+
+    // 对于数字评分显示提示
     if (this.data.pollType === 'number') {
-      // 对于数字评分类型，不需要选项
-      const numberContainer = document.createElement("div");
-      numberContainer.classList.add("poll-tool-info");
-      numberContainer.textContent = "数字评分投票不需要添加选项，将自动生成数字选项";
-      this.container.appendChild(numberContainer);
+      const infoBox = document.createElement('div');
+      infoBox.classList.add('poll-tool-info');
+      infoBox.textContent = '数字评分投票允许用户选择1到10之间的评分。';
+      this.container.appendChild(infoBox);
     } else {
-      // 为单选和多选类型创建选项输入
-      const optionsContainer = document.createElement("div");
-      optionsContainer.classList.add("poll-tool-options");
-      
-      const optionsLabel = document.createElement("label");
-      optionsLabel.textContent = "投票选项：";
-      optionsLabel.classList.add("poll-tool-label");
+      // 创建选项
+      const optionsContainer = document.createElement('div');
+      optionsContainer.classList.add('poll-tool-options');
+
+      const optionsLabel = document.createElement('div');
+      optionsLabel.classList.add('poll-tool-label');
+      optionsLabel.textContent = '投票选项';
       optionsContainer.appendChild(optionsLabel);
-      
-      // 显示现有选项
-      const optionsList = document.createElement("div");
-      optionsList.classList.add("poll-tool-options-list");
-      
+
       // 确保至少有两个选项
-      if (this.data.pollOptions.length < 2) {
+      if (!this.data.pollOptions || this.data.pollOptions.length < 2) {
         this.data.pollOptions = ['', ''];
       }
-      
+
+      const optionsList = document.createElement('div');
+      optionsList.classList.add('poll-tool-options-list');
+
       this.data.pollOptions.forEach((option, index) => {
         const optionItem = this._createOptionItem(option, index);
         optionsList.appendChild(optionItem);
       });
-      
+
       optionsContainer.appendChild(optionsList);
-      
+
       // 添加新选项按钮
       const addOptionBtn = document.createElement("button");
       addOptionBtn.classList.add("poll-tool-add-option");
@@ -146,7 +171,7 @@ export default class PollTool {
         const newOptionItem = this._createOptionItem('', this.data.pollOptions.length - 1);
         optionsList.appendChild(newOptionItem);
       });
-      
+
       optionsContainer.appendChild(addOptionBtn);
       this.container.appendChild(optionsContainer);
     }
@@ -158,7 +183,7 @@ export default class PollTool {
   _createOptionItem(option, index) {
     const optionItem = document.createElement("div");
     optionItem.classList.add("poll-tool-option-item");
-    
+
     const optionInput = document.createElement("input");
     optionInput.classList.add("poll-tool-option-input");
     optionInput.value = option;
@@ -166,7 +191,7 @@ export default class PollTool {
     optionInput.addEventListener("input", () => {
       this.data.pollOptions[index] = optionInput.value;
     });
-    
+
     const removeBtn = document.createElement("button");
     removeBtn.classList.add("poll-tool-remove-option");
     removeBtn.textContent = "×";
@@ -175,16 +200,16 @@ export default class PollTool {
       if (this.data.pollOptions.length <= 2) {
         return;
       }
-      
+
       this.data.pollOptions.splice(index, 1);
       // 重新渲染表单
       this.container.innerHTML = '';
       this._renderForm();
     });
-    
+
     optionItem.appendChild(optionInput);
     optionItem.appendChild(removeBtn);
-    
+
     return optionItem;
   }
 
@@ -297,7 +322,7 @@ export default class PollTool {
         font-size: 16px;
       }
     `;
-    
+
     document.head.appendChild(style);
   }
 
@@ -315,7 +340,7 @@ export default class PollTool {
     // 过滤掉空选项
     if (this.data.pollOptions) {
       this.data.pollOptions = this.data.pollOptions.filter(option => option.trim() !== '');
-      
+
       // 如果过滤后没有选项，添加默认选项
       if (this.data.pollOptions.length === 0 && this.data.pollType !== 'number') {
         this.data.pollOptions = ['选项1', '选项2'];
@@ -329,4 +354,4 @@ export default class PollTool {
       pollName: this.data.pollName
     };
   }
-} 
+}
