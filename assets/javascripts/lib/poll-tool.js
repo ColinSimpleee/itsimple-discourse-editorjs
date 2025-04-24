@@ -197,14 +197,17 @@ export default class PollTool {
     style.id = "poll-tool-styles";
     style.textContent = `
       .editorjs-poll-tool {
-        padding: 20px;
+        padding: 15px;
         border: 1px solid #e0e0e0;
         border-radius: 5px;
         background-color: #f9f9f9;
         margin-bottom: 20px;
+        width: 100%;
+        box-sizing: border-box;
       }
       .poll-tool-field {
         margin-bottom: 15px;
+        width: 100%;
       }
       .poll-tool-label {
         display: block;
@@ -220,13 +223,16 @@ export default class PollTool {
       }
       .poll-tool-options {
         margin-top: 20px;
+        width: 100%;
       }
       .poll-tool-options-list {
         margin-bottom: 10px;
+        width: 100%;
       }
       .poll-tool-option-item {
         display: flex;
         margin-bottom: 8px;
+        width: 100%;
       }
       .poll-tool-option-input {
         flex-grow: 1;
@@ -242,24 +248,56 @@ export default class PollTool {
         border-radius: 4px;
         cursor: pointer;
         font-size: 16px;
-        padding: 0 10px;
+        width: 30px;
+        height: 38px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
       .poll-tool-add-option {
-        background: #4a90e2;
+        background: #2196f3;
         color: white;
         border: none;
         border-radius: 4px;
-        padding: 8px 15px;
+        padding: 8px 12px;
         cursor: pointer;
+        margin-top: 5px;
       }
       .poll-tool-info {
+        background-color: #e3f2fd;
         padding: 10px;
-        background-color: #e8f4fd;
         border-radius: 4px;
+        color: #0d47a1;
+        font-size: 14px;
         margin-top: 10px;
-        color: #555;
+      }
+      .cdx-block.cdx-poll {
+        padding: 15px;
+        border: 1px solid #e0e0e0;
+        border-radius: 5px;
+        margin-bottom: 15px;
+      }
+      .cdx-poll__title {
+        font-weight: bold;
+        font-size: 18px;
+        margin-bottom: 15px;
+      }
+      .cdx-poll__options {
+        margin-top: 10px;
+      }
+      .cdx-poll__option {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+      .cdx-poll__option-input {
+        margin-right: 10px;
+      }
+      .cdx-poll__option-label {
+        font-size: 16px;
       }
     `;
+    
     document.head.appendChild(style);
   }
 
