@@ -97,13 +97,13 @@ export default class PollTool {
 
     const regularOption = document.createElement('option');
     regularOption.value = 'regular';
-    regularOption.textContent = 'Single Choice';
+    regularOption.textContent = 'Single';
     regularOption.selected = this.data.pollType === 'regular' || !this.data.pollType;
     typeSelect.appendChild(regularOption);
 
     const multipleOption = document.createElement('option');
     multipleOption.value = 'multiple';
-    multipleOption.textContent = 'Multiple Choice';
+    multipleOption.textContent = 'Multiple';
     multipleOption.selected = this.data.pollType === 'multiple';
     typeSelect.appendChild(multipleOption);
 
