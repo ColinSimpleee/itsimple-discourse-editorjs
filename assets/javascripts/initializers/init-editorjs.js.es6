@@ -3,6 +3,7 @@ import loadScript from "discourse/lib/load-script";
 import I18n from "I18n";
 import { ajax } from "discourse/lib/ajax";
 import VideoTool from "../lib/video-tool";
+import PollTool from "../lib/poll-tool";
 
 // 调试辅助函数
 const DEBUG = true;
@@ -217,9 +218,9 @@ export default {
                                   error("尝试手动隐藏加载状态失败:", e);
                                 }
                               }, 500);
-                            }).catch(error => {
-                              error("上传管理器上传失败:", error);
-                              reject(error);
+                            }).catch(err => {
+                              error("上传管理器上传失败:", err);
+                              reject(err);
                             });
                           } else {
                             // 回退方案：直接使用AJAX上传
@@ -286,14 +287,14 @@ export default {
                                 reject(new Error("上传返回数据无效"));
                               }
                             })
-                            .catch(error => {
-                              error("AJAX上传失败:", error);
-                              reject(error);
+                            .catch(err => {
+                              error("AJAX上传失败:", err);
+                              reject(err);
                             });
                           }
-                        } catch (error) {
-                          error("上传过程中出现异常:", error);
-                          reject(error);
+                        } catch (err) {
+                          error("上传过程中出现异常:", err);
+                          reject(err);
                         }
                       });
                     }
@@ -357,6 +358,11 @@ export default {
                   defaultColor: '#FFBF00',
                   type: 'marker'
                 }
+              },
+              // 添加投票工具
+              poll: PollTool && {
+                class: PollTool,
+                inlineToolbar: true
               }
             };
             
@@ -436,9 +442,9 @@ export default {
             
             this.isEditorJSLoaded = true;
             log("EditorJS 初始化成功");
-          } catch (error) {
-            error("初始化 EditorJS 失败:", error);
-            error("错误详情:", error.stack);
+          } catch (err) {
+            error("初始化 EditorJS 失败:", err);
+            error("错误详情:", err.stack);
             // 如果初始化失败，恢复原来的编辑器
             originalEditor.style.display = "";
           }
@@ -451,8 +457,8 @@ export default {
             // 将EditorJS内容转换为Markdown
             const markdown = this._convertToMarkdown(data);
             this.set("value", markdown);
-          }).catch(error => {
-            error("保存 EditorJS 内容失败:", error);
+          }).catch(err => {
+            error("保存 EditorJS 内容失败:", err);
           });
         },
         
@@ -607,6 +613,46 @@ export default {
                 }
               });
             }
+            // 识别投票块
+            else if (/\[poll.*?\]/.test(paragraph)) {
+              // 解析投票标签
+              const pollBlock = {
+                type: "poll",
+                data: {
+                  pollName: "",
+                  pollTitle: "",
+                  pollType: "regular",
+                  pollOptions: []
+                }
+              };
+
+              // 尝试提取投票名称
+              const nameMatch = paragraph.match(/\[poll.*?name\s*=\s*["']?([^"'\s\]]+)["']?/i);
+              if (nameMatch) {
+                pollBlock.data.pollName = nameMatch[1];
+              }
+
+              // 尝试提取投票类型
+              const typeMatch = paragraph.match(/\[poll.*?type\s*=\s*["']?([^"'\s\]]+)["']?/i);
+              if (typeMatch) {
+                pollBlock.data.pollType = typeMatch[1];
+              }
+
+              // 尝试提取投票标题
+              if (lines.length > 1 && lines[1].trim().startsWith("# ")) {
+                pollBlock.data.pollTitle = lines[1].trim().substring(2);
+              }
+
+              // 尝试提取投票选项
+              for (let i = 1; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (line.startsWith("* ") || line.startsWith("- ")) {
+                  pollBlock.data.pollOptions.push(line.substring(2));
+                }
+              }
+
+              blocks.push(pollBlock);
+            }
             // 其他内容视为普通段落
             else if (paragraph.trim() !== "") {
               blocks.push({
@@ -679,6 +725,37 @@ export default {
                 break;
               case "video":
                 markdown += `[video]\n\n`;
+                break;
+              case "poll":
+                // 构建投票Markdown
+                let pollMarkdown = "[poll";
+                
+                // 添加投票名称
+                if (block.data.pollName) {
+                  pollMarkdown += ` name="${block.data.pollName}"`;
+                }
+                
+                // 添加投票类型
+                if (block.data.pollType && block.data.pollType !== "regular") {
+                  pollMarkdown += ` type=${block.data.pollType}`;
+                }
+                
+                pollMarkdown += "]\n";
+                
+                // 添加投票标题
+                if (block.data.pollTitle) {
+                  pollMarkdown += `# ${block.data.pollTitle}\n`;
+                }
+                
+                // 添加投票选项
+                if (block.data.pollOptions && block.data.pollOptions.length > 0) {
+                  block.data.pollOptions.forEach(option => {
+                    pollMarkdown += `* ${option}\n`;
+                  });
+                }
+                
+                pollMarkdown += "[/poll]\n\n";
+                markdown += pollMarkdown;
                 break;
              
               default:
