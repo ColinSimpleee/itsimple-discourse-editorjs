@@ -7,7 +7,7 @@ import { createUpload } from "../vendor/upchunk";
 export default class VideoTool {
   static get toolbox() {
     return {
-      title: "视频",
+      title: "Video",
       icon: '<svg width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M18 4.5V15.5C18 16.0523 17.5523 16.5 17 16.5H3C2.44772 16.5 2 16.0523 2 15.5V4.5C2 3.94772 2.44772 3.5 3 3.5H17C17.5523 3.5 18 3.94772 18 4.5ZM13.5 10L8 6.5V13.5L13.5 10Z" fill="currentColor"/></svg>'
     };
   }
@@ -112,8 +112,8 @@ export default class VideoTool {
             <path d="M18 4.5V15.5C18 16.0523 17.5523 16.5 17 16.5H3C2.44772 16.5 2 16.0523 2 15.5V4.5C2 3.94772 2.44772 3.5 3 3.5H17C17.5523 3.5 18 3.94772 18 4.5ZM13.5 10L8 6.5V13.5L13.5 10Z" fill="currentColor"/>
           </svg>
         </div>
-        <div class="video-uploader-text">点击上传视频</div>
-        <div class="video-uploader-hint">支持MP4、WebM、Ogg格式</div>
+        <div class="video-uploader-text">Click to upload video</div>
+        <div class="video-uploader-hint">Support MP4, WebM, Ogg format</div>
         <input type="file" class="video-file-input" accept="video/mp4,video/webm,video/ogg" style="display:none;">
       </div>
     `;

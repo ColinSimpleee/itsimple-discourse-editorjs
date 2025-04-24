@@ -2,7 +2,6 @@ import { withPluginApi } from "discourse/lib/plugin-api";
 import loadScript from "discourse/lib/load-script";
 import I18n from "I18n";
 import { ajax } from "discourse/lib/ajax";
-import DemoTool from "../lib/editorjs-demo-tool";
 import VideoTool from "../lib/video-tool";
 
 // 调试辅助函数
@@ -341,11 +340,6 @@ export default {
                 class: VideoTool,
                 inlineToolbar: true
               },
-              // 添加自定义 Demo 工具
-              demo: {
-                class: DemoTool,
-                inlineToolbar: false
-              },
               // 添加文本颜色工具
               Color: window.ColorPlugin && {
                 class: window.ColorPlugin,
@@ -601,15 +595,6 @@ export default {
                 });
               }
             }
-            // 识别 Demo 块
-            else if (paragraph.trim().startsWith("[demo]")) {
-              blocks.push({
-                type: "demo",
-                data: {
-                  message: "Hello World"
-                }
-              });
-            }
             // 识别视频块
             else if (paragraph.trim().startsWith("[video]")) {
               blocks.push({
@@ -695,9 +680,7 @@ export default {
               case "video":
                 markdown += `[video]\n\n`;
                 break;
-              case "demo":
-                markdown += `[demo]\n\n`;
-                break;
+             
               default:
                 console.warn("未知的块类型:", block.type);
                 if (block.data.text) {
