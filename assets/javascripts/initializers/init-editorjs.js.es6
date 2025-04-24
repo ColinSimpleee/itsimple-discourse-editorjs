@@ -738,6 +738,12 @@ export default {
                 // 添加投票类型
                 if (block.data.pollType && block.data.pollType !== "regular") {
                   pollMarkdown += ` type=${block.data.pollType}`;
+                  
+                  // 为数字评分类型添加必要参数
+                  if (block.data.pollType === "number") {
+                    // 默认的数字评分范围 1-10
+                    pollMarkdown += ` min=1 max=10 step=1`;
+                  }
                 }
 
                 pollMarkdown += "]\n";
@@ -747,8 +753,8 @@ export default {
                   pollMarkdown += `# ${block.data.pollTitle}\n`;
                 }
 
-                // 添加投票选项
-                if (block.data.pollOptions && block.data.pollOptions.length > 0) {
+                // 添加投票选项 (对于数字评分类型不需要选项)
+                if (block.data.pollType !== "number" && block.data.pollOptions && block.data.pollOptions.length > 0) {
                   block.data.pollOptions.forEach(option => {
                     pollMarkdown += `* ${option}\n`;
                   });

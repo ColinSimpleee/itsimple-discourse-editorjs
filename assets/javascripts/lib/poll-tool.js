@@ -135,7 +135,7 @@ export default class PollTool {
     if (this.data.pollType === 'number') {
       const infoBox = document.createElement('div');
       infoBox.classList.add('poll-tool-info');
-      infoBox.textContent = '数字评分投票允许用户选择1到10之间的评分。';
+      infoBox.textContent = '数字评分投票允许用户选择1到10之间的评分，步长为1。注意：数字评分投票不需要手动添加选项。';
       this.container.appendChild(infoBox);
     } else {
       // 创建选项
