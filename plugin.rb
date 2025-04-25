@@ -20,12 +20,38 @@ if Rails.env.development?
   end
 end
 
-# 使用 discourse-video 插件的 API，但不重复挂载路由
+# Editor.js整合
 after_initialize do
+  # 添加站点设置
+  SiteSetting.class_eval do
+    attr_accessor :editorjs_mux_token_id, :editorjs_mux_token_secret, :editorjs_mux_webhook_secret
+    attr_accessor :editorjs_enable_mp4_download
+  end
+
+  # 加载模型和服务
+  load File.expand_path('../app/models/editorjs_video.rb', __FILE__)
+  load File.expand_path('../lib/editorjs/mux_api.rb', __FILE__)
+  load File.expand_path('../app/controllers/editorjs/videos_controller.rb', __FILE__)
+
+  # 添加路由
+  Discourse::Application.routes.append do
+    namespace :editorjs do
+      post "videos/upload" => "videos#create_upload"
+      get "videos/:video_id/status" => "videos#video_status"
+      post "videos/webhook" => "videos#webhook"
+    end
+  end
+  
+  # 添加权限检查
+  add_to_class(:guardian, :can_upload_video?) do
+    return true if @user.admin || @user.moderator
+    @user.trust_level >= SiteSetting.editorjs_min_trust_level
+  end
+  
   # 检查 DiscourseVideo 插件是否已加载，但不重复挂载路由
   if defined?(DiscourseVideo)
     Rails.logger.info("DiscourseVideo 插件已加载，EditorJS 将使用其 API")
   else
-    Rails.logger.warn("DiscourseVideo 插件未加载，EditorJS 的视频功能可能无法正常工作")
+    Rails.logger.warn("DiscourseVideo 插件未加载，EditorJS 的视频功能已自行实现")
   end
 end 

@@ -228,46 +228,86 @@ export default class VideoTool {
 
   async _uploadVideo(file) {
     try {
-      // 获取 MuxApi 服务
+      // 获取MuxApi服务
       const muxApi = getOwner(this).lookup("service:mux-api");
 
       // 创建上传
       const uploadData = await muxApi.createDirectUpload();
+      
+      if (!uploadData || !uploadData.url || !uploadData.video_id) {
+        throw new Error("获取上传URL失败");
+      }
 
-      // 使用 UpChunk 上传文件
+      this.data.videoId = uploadData.video_id;
+
+      // 使用UpChunk上传文件
       const upload = createUpload({
         file,
         endpoint: uploadData.url,
-        chunkSize: 5120 // 5MB 分块
+        chunkSize: 5120 // 5MB分块
       });
 
       // 监听上传进度
       upload.on("progress", (event) => {
         this.uploadProgress = event.detail;
-        this._renderUploadProgress(this.container.querySelector(".video-uploader-uploading"));
+        const progressContainer = this.container.querySelector(".video-uploader-container");
+        if (progressContainer) {
+          this._renderUploadProgress(progressContainer);
+        }
       });
 
       // 监听上传完成
       upload.on("success", async () => {
         this.uploadProgress = 100;
         this.uploadStatus = "处理中...";
-        this._renderUploadProgress(this.container.querySelector(".video-uploader-uploading"));
+        
+        const progressContainer = this.container.querySelector(".video-uploader-container");
+        if (progressContainer) {
+          this._renderUploadProgress(progressContainer);
+        }
 
         // 检查视频状态
         this._checkVideoStatus(muxApi, uploadData.video_id);
       });
+      
+      // 监听上传错误
+      upload.on("error", (error) => {
+        this.uploading = false;
+        
+        // 显示错误信息
+        const uploaderContainer = this.container.querySelector(".video-uploader-container");
+        if (uploaderContainer) {
+          uploaderContainer.innerHTML = `
+            <div class="video-uploader-error">
+              <div class="error-icon">⚠️</div>
+              <div class="error-message">上传失败: ${error.detail?.message || '未知错误'}</div>
+              <button class="retry-button">重试</button>
+            </div>
+          `;
+          
+          // 添加重试按钮事件
+          const retryButton = uploaderContainer.querySelector(".retry-button");
+          if (retryButton) {
+            retryButton.addEventListener("click", () => {
+              this._renderUploader();
+            });
+          }
+        }
+      });
     } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error("上传视频失败:", error);
       this.uploading = false;
       this._renderUploader();
     }
   }
 
   async _checkVideoStatus(muxApi, videoId) {
+    if (!videoId) {
+      return;
+    }
+
     try {
       const status = await muxApi.getVideoStatus(videoId);
-
+      
       if (status.state === "ready") {
         this.data = {
           videoId,
@@ -279,15 +319,34 @@ export default class VideoTool {
         // 重新渲染视频
         this.container.innerHTML = "";
         this._renderVideo();
+      } else if (status.state === "errored") {
+        this.uploading = false;
+        
+        // 显示错误信息
+        const uploaderContainer = this.container.querySelector(".video-uploader-container");
+        if (uploaderContainer) {
+          uploaderContainer.innerHTML = `
+            <div class="video-uploader-error">
+              <div class="error-icon">⚠️</div>
+              <div class="error-message">视频处理失败</div>
+              <button class="retry-button">重试</button>
+            </div>
+          `;
+          
+          // 添加重试按钮事件
+          const retryButton = uploaderContainer.querySelector(".retry-button");
+          if (retryButton) {
+            retryButton.addEventListener("click", () => {
+              this._renderUploader();
+            });
+          }
+        }
       } else {
         // 如果视频还在处理中，5秒后再次检查
         setTimeout(() => this._checkVideoStatus(muxApi, videoId), 5000);
       }
     } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error("获取视频状态失败:", error);
-      this.uploading = false;
-      this._renderUploader();
+      setTimeout(() => this._checkVideoStatus(muxApi, videoId), 5000);
     }
   }
 

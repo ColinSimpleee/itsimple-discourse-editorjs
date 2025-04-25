@@ -1,0 +1,22 @@
+plugins:
+  editorjs_mux_token_id:
+    default: ''
+    client: false
+    hidden: false
+  editorjs_mux_token_secret:
+    default: ''
+    client: false
+    hidden: false
+    secret: true
+  editorjs_mux_webhook_secret:
+    default: ''
+    client: false
+    hidden: false
+    secret: true
+  editorjs_enable_mp4_download:
+    default: false
+    client: true
+  editorjs_min_trust_level:
+    default: 1
+    client: true
+    enum: 'TrustLevelSetting' 
