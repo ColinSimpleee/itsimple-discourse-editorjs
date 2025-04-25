@@ -614,44 +614,75 @@ export default {
               });
             }
             // Identify poll blocks
-            else if (/\[poll.*?\]/.test(paragraph)) {
-              // Parse poll tag
-              const pollBlock = {
-                type: "poll",
-                data: {
-                  pollName: "",
-                  pollTitle: "",
-                  pollType: "regular",
-                  pollOptions: []
+            else if (/^\[poll.*?\]/.test(paragraph) && paragraph.includes("[/poll]")) {
+              // Extract poll parts
+              const pollMatch = paragraph.match(/\[poll(.*?)\](.*?)\[\/poll\]/s);
+              if (pollMatch) {
+                const pollAttributes = pollMatch[1].trim();
+                const pollContent = pollMatch[2].trim();
+                
+                // Parse poll attributes
+                const nameMatch = pollAttributes.match(/name=["']?([^"'\s]+)["']?/);
+                const typeMatch = pollAttributes.match(/type=["']?([^"'\s]+)["']?/);
+                
+                // Create poll block
+                const pollBlock = {
+                  type: "poll",
+                  data: {
+                    pollName: nameMatch ? nameMatch[1] : `poll_${Math.floor(Math.random() * 1000)}`,
+                    pollTitle: "",
+                    pollType: typeMatch ? typeMatch[1] : "regular",
+                    pollOptions: [],
+                    pollOptionsWithImages: []
+                  }
+                };
+                
+                // Process poll content lines
+                const lines = pollContent.split("\n");
+                for (let i = 0; i < lines.length; i++) {
+                  const line = lines[i].trim();
+                  
+                  // Title detection
+                  if (line.startsWith("# ")) {
+                    pollBlock.data.pollTitle = line.substring(2);
+                    continue;
+                  }
+                  
+                  // Option detection
+                  if (line.startsWith("* ") || line.startsWith("- ")) {
+                    const optionText = line.substring(2).trim();
+                    
+                    // 检查选项是否包含图片
+                    const imageMatch = optionText.match(/!\[(.*?)\]\((.*?)\)/);
+                    
+                    if (imageMatch) {
+                      // 选项包含图片
+                      const imageAlt = imageMatch[1];
+                      const imageUrl = imageMatch[2];
+                      
+                      // 提取图片前的文本
+                      const textBeforeImage = optionText.substring(0, optionText.indexOf('!['));
+                      
+                      // 添加到选项数组
+                      pollBlock.data.pollOptions.push(textBeforeImage.trim() || imageAlt);
+                      pollBlock.data.pollOptionsWithImages.push({
+                        text: textBeforeImage.trim(),
+                        image: imageUrl
+                      });
+                    } else {
+                      // 纯文本选项
+                      pollBlock.data.pollOptions.push(optionText);
+                      pollBlock.data.pollOptionsWithImages.push({
+                        text: optionText,
+                        image: ""
+                      });
+                    }
+                  }
                 }
-              };
-
-              // Try to extract poll name
-              const nameMatch = paragraph.match(/\[poll.*?name\s*=\s*["']?([^"'\s\]]+)["']?/i);
-              if (nameMatch) {
-                pollBlock.data.pollName = nameMatch[1];
+                
+                blocks.push(pollBlock);
+                return; // 使用return替代continue，提前结束当前迭代
               }
-
-              // Try to extract poll type
-              const typeMatch = paragraph.match(/\[poll.*?type\s*=\s*["']?([^"'\s\]]+)["']?/i);
-              if (typeMatch) {
-                pollBlock.data.pollType = typeMatch[1];
-              }
-
-              // Try to extract poll title
-              if (lines.length > 1 && lines[1].trim().startsWith("# ")) {
-                pollBlock.data.pollTitle = lines[1].trim().substring(2);
-              }
-
-              // Try to extract poll options
-              for (let i = 1; i < lines.length; i++) {
-                const line = lines[i].trim();
-                if (line.startsWith("* ") || line.startsWith("- ")) {
-                  pollBlock.data.pollOptions.push(line.substring(2));
-                }
-              }
-
-              blocks.push(pollBlock);
             }
             // Other content as regular paragraphs
             else if (paragraph.trim() !== "") {
@@ -740,6 +771,12 @@ export default {
                   pollMarkdown += ` type=${block.data.pollType}`;
                 }
 
+                // 添加更多选项：结果和公开设置
+                pollMarkdown += ` results=always public=true`;
+                
+                // 添加图表类型
+                pollMarkdown += ` chartType=bar`;
+
                 pollMarkdown += "]\n";
 
                 // Add poll title
@@ -747,8 +784,27 @@ export default {
                   pollMarkdown += `# ${block.data.pollTitle}\n`;
                 }
 
-                // Add poll options
-                if (block.data.pollOptions && block.data.pollOptions.length > 0) {
+                // Add poll options - 支持图片选项
+                if (block.data.pollOptionsWithImages && block.data.pollOptionsWithImages.length > 0) {
+                  // 新的含图片选项格式
+                  block.data.pollOptionsWithImages.forEach(option => {
+                    pollMarkdown += `* `;
+                    
+                    // 如果有文本，先添加文本
+                    if (option.text && option.text.trim() !== '') {
+                      pollMarkdown += `${option.text.trim()} `;
+                    }
+                    
+                    // 如果有图片，添加图片markdown
+                    if (option.image && option.image !== '') {
+                      const imageName = option.text || "Poll Option";
+                      pollMarkdown += `![${imageName}](${option.image})`;
+                    }
+                    
+                    pollMarkdown += `\n`;
+                  });
+                } else if (block.data.pollOptions && block.data.pollOptions.length > 0) {
+                  // 兼容旧格式
                   block.data.pollOptions.forEach(option => {
                     pollMarkdown += `* ${option}\n`;
                   });
@@ -765,8 +821,6 @@ export default {
                 }
             }
           });
-
-          console.log(markdown);
 
           return markdown;
         }
