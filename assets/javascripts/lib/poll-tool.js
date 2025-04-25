@@ -259,7 +259,7 @@ export default class PollTool {
     const optionItem = document.createElement("div");
     optionItem.classList.add("poll-tool-option-item");
 
-    // Text inpu
+    // Text input
     const optionInputContainer = document.createElement("div");
     optionInputContainer.classList.add("poll-tool-option-input-container");
 
@@ -267,15 +267,22 @@ export default class PollTool {
     optionInput.classList.add("poll-tool-option-input");
     optionInput.value = option.text || '';
     optionInput.placeholder = `Option ${index + 1} Text`;
-    optionInput.addEventListener("input", () => {
+
+    // 定义更新选项数据的函数
+    const updateOptionData = () => {
       const newItem = {
         text: optionInput.value,
         image: option.image
       };
       this.data.pollOptionsWithImages[index] = newItem;
-
       this.data.pollOptions[index] = optionInput.value;
-    });
+    };
+
+    // 添加多个事件监听器确保数据更新
+    optionInput.addEventListener("input", updateOptionData);
+    optionInput.addEventListener("change", updateOptionData);
+    optionInput.addEventListener("blur", updateOptionData);
+
     optionInputContainer.appendChild(optionInput);
 
     // Image upload button
