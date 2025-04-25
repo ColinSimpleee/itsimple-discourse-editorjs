@@ -468,230 +468,270 @@ export default {
           // Advanced Markdown to EditorJS Blocks conversion
           const blocks = [];
 
-          // Split text into paragraphs
-          const paragraphs = markdown.split(/\n{2,}/);
-
+          // 预处理 - 首先提取所有完整的投票块
+          const pollBlocks = [];
+          const pollRegex = /\[poll.*?\][\s\S]*?\[\/poll\]/g;
+          let pollMatch;
+          let processedMarkdown = markdown;
+          
+          // 第一步：提取所有投票块
+          while ((pollMatch = pollRegex.exec(markdown)) !== null) {
+            const pollContent = pollMatch[0];
+            const pollStart = pollMatch.index;
+            const pollEnd = pollStart + pollContent.length;
+            
+            // 存储投票块及其位置信息
+            pollBlocks.push({
+              content: pollContent,
+              start: pollStart,
+              end: pollEnd
+            });
+            
+            // 用占位符替换原始Markdown中的投票块，防止被其他解析器错误解析
+            const placeholderBefore = processedMarkdown.substring(0, pollStart);
+            const placeholderAfter = processedMarkdown.substring(pollEnd);
+            const placeholderText = `[POLL_PLACEHOLDER_${pollBlocks.length - 1}]`;
+            processedMarkdown = placeholderBefore + placeholderText + placeholderAfter;
+            
+            // 重置正则表达式的lastIndex，因为我们修改了源字符串
+            pollRegex.lastIndex = pollStart + placeholderText.length;
+          }
+          
+          // 第二步：解析占位符处理后的Markdown
+          const paragraphs = processedMarkdown.split(/\n{2,}/);
+          
           paragraphs.forEach(paragraph => {
-            const lines = paragraph.split("\n");
-            const firstLine = lines[0].trim();
+            // 检查是否为投票占位符
+            const placeholderMatch = paragraph.match(/\[POLL_PLACEHOLDER_(\d+)\]/);
+            if (placeholderMatch) {
+              const pollIndex = parseInt(placeholderMatch[1]);
+              const pollData = pollBlocks[pollIndex];
+              
+              if (pollData) {
+                // 处理找到的投票块
+                const pollContent = pollData.content;
+                const match = pollContent.match(/\[poll(.*?)\]([\s\S]*?)\[\/poll\]/);
+                
+                if (match) {
+                  const pollAttributes = match[1].trim();
+                  const pollContent = match[2].trim();
+                  
+                  // 解析投票属性
+                  const nameMatch = pollAttributes.match(/name=["']?([^"'\s]+)["']?/);
+                  const typeMatch = pollAttributes.match(/type=["']?([^"'\s]+)["']?/);
+                  
+                  // 创建投票块
+                  const pollBlock = {
+                    type: "poll",
+                    data: {
+                      pollName: nameMatch ? nameMatch[1] : `poll_${Math.floor(Math.random() * 1000)}`,
+                      pollTitle: "",
+                      pollType: typeMatch ? typeMatch[1] : "regular",
+                      pollOptions: [],
+                      pollOptionsWithImages: []
+                    }
+                  };
+                  
+                  // 处理投票内容
+                  const lines = pollContent.split("\n");
+                  for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    
+                    // 标题检测
+                    if (line.startsWith("# ")) {
+                      pollBlock.data.pollTitle = line.substring(2);
+                      continue;
+                    }
+                    
+                    // 选项检测
+                    if (line.startsWith("* ") || line.startsWith("- ")) {
+                      const optionText = line.substring(2).trim();
+                      
+                      // 检查选项是否包含图片
+                      const imageMatch = optionText.match(/!\[(.*?)\]\((.*?)\)/);
+                      
+                      if (imageMatch) {
+                        // 选项包含图片
+                        const imageAlt = imageMatch[1];
+                        const imageUrl = imageMatch[2];
+                        
+                        // 提取图片前的文本
+                        const textBeforeImage = optionText.substring(0, optionText.indexOf('!['));
+                        
+                        // 添加到选项数组
+                        pollBlock.data.pollOptions.push(textBeforeImage.trim() || imageAlt);
+                        pollBlock.data.pollOptionsWithImages.push({
+                          text: textBeforeImage.trim(),
+                          image: imageUrl
+                        });
+                      } else {
+                        // 纯文本选项
+                        pollBlock.data.pollOptions.push(optionText);
+                        pollBlock.data.pollOptionsWithImages.push({
+                          text: optionText,
+                          image: ""
+                        });
+                      }
+                    }
+                  }
+                  
+                  blocks.push(pollBlock);
+                  return; // 退出当前迭代
+                }
+              }
+            } 
+            // 如果不是投票占位符，继续解析其他类型的块
+            else {
+              const lines = paragraph.split("\n");
+              const firstLine = lines[0].trim();
 
-            // Identify headers
-            if (firstLine.startsWith("# ")) {
-              blocks.push({
-                type: "header",
-                data: {
-                  text: firstLine.substring(2),
-                  level: 1
-                }
-              });
-            } else if (firstLine.startsWith("## ")) {
-              blocks.push({
-                type: "header",
-                data: {
-                  text: firstLine.substring(3),
-                  level: 2
-                }
-              });
-            } else if (firstLine.startsWith("### ")) {
-              blocks.push({
-                type: "header",
-                data: {
-                  text: firstLine.substring(4),
-                  level: 3
-                }
-              });
-            } else if (firstLine.startsWith("#### ")) {
-              blocks.push({
-                type: "header",
-                data: {
-                  text: firstLine.substring(5),
-                  level: 4
-                }
-              });
-            }
-            // Identify unordered lists
-            else if (lines.every(line => line.trim().startsWith("- "))) {
-              blocks.push({
-                type: "list",
-                data: {
-                  style: "unordered",
-                  items: lines.map(line => line.trim().substring(2))
-                }
-              });
-            }
-            // Identify ordered lists
-            else if (lines.every(line => /^\d+\.\s/.test(line.trim()))) {
-              blocks.push({
-                type: "list",
-                data: {
-                  style: "ordered",
-                  items: lines.map(line => line.trim().replace(/^\d+\.\s/, ""))
-                }
-              });
-            }
-            // Identify quotes
-            else if (lines.every(line => line.trim().startsWith("> "))) {
-              blocks.push({
-                type: "quote",
-                data: {
-                  text: lines.map(line => line.trim().substring(2)).join("\n"),
-                  caption: ""
-                }
-              });
-            }
-            // Identify code blocks
-            else if (paragraph.startsWith("```") && paragraph.endsWith("```")) {
-              const code = paragraph.substring(3, paragraph.length - 3).trim();
-              blocks.push({
-                type: "code",
-                data: {
-                  code: code
-                }
-              });
-            }
-            // Identify separator
-            else if (paragraph.trim() === "---") {
-              blocks.push({
-                type: "delimiter",
-                data: {}
-              });
-            }
-            // Identify embedded content (iframe)
-            else if (/<iframe.*?src="(.*?)".*?><\/iframe>/.test(paragraph)) {
-              const match = paragraph.match(/<iframe.*?src="(.*?)".*?><\/iframe>/);
-              if (match) {
-                const captionMatch = paragraph.match(/<iframe.*?><\/iframe>\s*\*(.*?)\*/);
+              // Identify headers
+              if (firstLine.startsWith("# ")) {
                 blocks.push({
-                  type: "embed",
+                  type: "header",
                   data: {
-                    service: "custom",
-                    source: match[1],
-                    embed: match[1],
-                    width: 600,
-                    height: 400,
-                    caption: captionMatch ? captionMatch[1] : ""
+                    text: firstLine.substring(2),
+                    level: 1
+                  }
+                });
+              } else if (firstLine.startsWith("## ")) {
+                blocks.push({
+                  type: "header",
+                  data: {
+                    text: firstLine.substring(3),
+                    level: 2
+                  }
+                });
+              } else if (firstLine.startsWith("### ")) {
+                blocks.push({
+                  type: "header",
+                  data: {
+                    text: firstLine.substring(4),
+                    level: 3
+                  }
+                });
+              } else if (firstLine.startsWith("#### ")) {
+                blocks.push({
+                  type: "header",
+                  data: {
+                    text: firstLine.substring(5),
+                    level: 4
                   }
                 });
               }
-            }
-            // Identify images
-            else if (/!\[.*?\]\(.*?\)/.test(paragraph)) {
-              const match = paragraph.match(/!\[(.*?)\]\((.*?)\)/);
-              if (match) {
+              // Identify unordered lists
+              else if (lines.every(line => line.trim().startsWith("- "))) {
                 blocks.push({
-                  type: "image",
+                  type: "list",
                   data: {
-                    file: {
-                      url: match[2]
-                    },
-                    caption: match[1] || ""
+                    style: "unordered",
+                    items: lines.map(line => line.trim().substring(2))
                   }
                 });
               }
-            }
-            // Identify links
-            else if (/\[.*?\]\(.*?\)/.test(paragraph) && !/!\[.*?\]\(.*?\)/.test(paragraph)) {
-              const match = paragraph.match(/\[(.*?)\]\((.*?)\)/);
-              if (match) {
+              // Identify ordered lists
+              else if (lines.every(line => /^\d+\.\s/.test(line.trim()))) {
+                blocks.push({
+                  type: "list",
+                  data: {
+                    style: "ordered",
+                    items: lines.map(line => line.trim().replace(/^\d+\.\s/, ""))
+                  }
+                });
+              }
+              // Identify quotes
+              else if (lines.every(line => line.trim().startsWith("> "))) {
+                blocks.push({
+                  type: "quote",
+                  data: {
+                    text: lines.map(line => line.trim().substring(2)).join("\n"),
+                    caption: ""
+                  }
+                });
+              }
+              // Identify code blocks
+              else if (paragraph.startsWith("```") && paragraph.endsWith("```")) {
+                const code = paragraph.substring(3, paragraph.length - 3).trim();
+                blocks.push({
+                  type: "code",
+                  data: {
+                    code: code
+                  }
+                });
+              }
+              // Identify separator
+              else if (paragraph.trim() === "---") {
+                blocks.push({
+                  type: "delimiter",
+                  data: {}
+                });
+              }
+              // Identify embedded content (iframe)
+              else if (/<iframe.*?src="(.*?)".*?><\/iframe>/.test(paragraph)) {
+                const match = paragraph.match(/<iframe.*?src="(.*?)".*?><\/iframe>/);
+                if (match) {
+                  const captionMatch = paragraph.match(/<iframe.*?><\/iframe>\s*\*(.*?)\*/);
+                  blocks.push({
+                    type: "embed",
+                    data: {
+                      service: "custom",
+                      source: match[1],
+                      embed: match[1],
+                      width: 600,
+                      height: 400,
+                      caption: captionMatch ? captionMatch[1] : ""
+                    }
+                  });
+                }
+              }
+              // Identify video blocks
+              else if (paragraph.trim().startsWith("[video]")) {
+                blocks.push({
+                  type: "video",
+                  data: {
+                    videoId: "",
+                    playbackId: "",
+                    thumbnailUrl: "",
+                    duration: 0
+                  }
+                });
+              }
+              // Identify images
+              else if (/!\[.*?\]\(.*?\)/.test(paragraph)) {
+                const match = paragraph.match(/!\[(.*?)\]\((.*?)\)/);
+                if (match) {
+                  blocks.push({
+                    type: "image",
+                    data: {
+                      file: {
+                        url: match[2]
+                      },
+                      caption: match[1] || ""
+                    }
+                  });
+                }
+              }
+              // Identify links
+              else if (/\[.*?\]\(.*?\)/.test(paragraph) && !/!\[.*?\]\(.*?\)/.test(paragraph)) {
+                const match = paragraph.match(/\[(.*?)\]\((.*?)\)/);
+                if (match) {
+                  blocks.push({
+                    type: "paragraph",
+                    data: {
+                      text: `<a href="${match[2]}">${match[1]}</a>`
+                    }
+                  });
+                }
+              }
+              // Other content as regular paragraphs
+              else if (paragraph.trim() !== "") {
                 blocks.push({
                   type: "paragraph",
                   data: {
-                    text: `<a href="${match[2]}">${match[1]}</a>`
+                    text: paragraph
                   }
                 });
               }
-            }
-            // Identify video blocks
-            else if (paragraph.trim().startsWith("[video]")) {
-              blocks.push({
-                type: "video",
-                data: {
-                  videoId: "",
-                  playbackId: "",
-                  thumbnailUrl: "",
-                  duration: 0
-                }
-              });
-            }
-            // Identify poll blocks
-            else if (/^\[poll.*?\]/.test(paragraph) && paragraph.includes("[/poll]")) {
-              // Extract poll parts
-              const pollMatch = paragraph.match(/\[poll(.*?)\](.*?)\[\/poll\]/s);
-              if (pollMatch) {
-                const pollAttributes = pollMatch[1].trim();
-                const pollContent = pollMatch[2].trim();
-                
-                // Parse poll attributes
-                const nameMatch = pollAttributes.match(/name=["']?([^"'\s]+)["']?/);
-                const typeMatch = pollAttributes.match(/type=["']?([^"'\s]+)["']?/);
-                
-                // Create poll block
-                const pollBlock = {
-                  type: "poll",
-                  data: {
-                    pollName: nameMatch ? nameMatch[1] : `poll_${Math.floor(Math.random() * 1000)}`,
-                    pollTitle: "",
-                    pollType: typeMatch ? typeMatch[1] : "regular",
-                    pollOptions: [],
-                    pollOptionsWithImages: []
-                  }
-                };
-                
-                // Process poll content lines
-                const lines = pollContent.split("\n");
-                for (let i = 0; i < lines.length; i++) {
-                  const line = lines[i].trim();
-                  
-                  // Title detection
-                  if (line.startsWith("# ")) {
-                    pollBlock.data.pollTitle = line.substring(2);
-                    continue;
-                  }
-                  
-                  // Option detection
-                  if (line.startsWith("* ") || line.startsWith("- ")) {
-                    const optionText = line.substring(2).trim();
-                    
-                    // 检查选项是否包含图片
-                    const imageMatch = optionText.match(/!\[(.*?)\]\((.*?)\)/);
-                    
-                    if (imageMatch) {
-                      // 选项包含图片
-                      const imageAlt = imageMatch[1];
-                      const imageUrl = imageMatch[2];
-                      
-                      // 提取图片前的文本
-                      const textBeforeImage = optionText.substring(0, optionText.indexOf('!['));
-                      
-                      // 添加到选项数组
-                      pollBlock.data.pollOptions.push(textBeforeImage.trim() || imageAlt);
-                      pollBlock.data.pollOptionsWithImages.push({
-                        text: textBeforeImage.trim(),
-                        image: imageUrl
-                      });
-                    } else {
-                      // 纯文本选项
-                      pollBlock.data.pollOptions.push(optionText);
-                      pollBlock.data.pollOptionsWithImages.push({
-                        text: optionText,
-                        image: ""
-                      });
-                    }
-                  }
-                }
-                
-                blocks.push(pollBlock);
-                return; // 使用return替代continue，提前结束当前迭代
-              }
-            }
-            // Other content as regular paragraphs
-            else if (paragraph.trim() !== "") {
-              blocks.push({
-                type: "paragraph",
-                data: {
-                  text: paragraph
-                }
-              });
             }
           });
 
