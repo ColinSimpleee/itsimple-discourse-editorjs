@@ -19,7 +19,9 @@ export default class PollTool {
       pollType: {},
       pollTitle: {},
       pollName: {},
-      pollOptionsWithImages: {}
+      pollOptionsWithImages: {},
+      pollResults: {},
+      pollPublic: {}
     };
   }
 
@@ -30,7 +32,9 @@ export default class PollTool {
       pollType: data.pollType || 'regular',
       pollTitle: data.pollTitle || '',
       pollName: data.pollName || 'poll_' + Math.floor(Math.random() * 1000),
-      pollOptionsWithImages: data.pollOptionsWithImages || []
+      pollOptionsWithImages: data.pollOptionsWithImages || [],
+      pollResults: data.pollResults || 'always',
+      pollPublic: data.pollPublic || false
     };
     this.container = undefined;
     this.settings = config;
@@ -139,6 +143,71 @@ export default class PollTool {
 
     typeField.appendChild(typeSelect);
     this.container.appendChild(typeField);
+
+    // 创建结果显示时机选项
+    const resultsField = document.createElement('div');
+    resultsField.classList.add('poll-tool-field');
+
+    const resultsLabel = document.createElement('label');
+    resultsLabel.classList.add('poll-tool-label');
+    resultsLabel.textContent = 'Result Visibility';
+    resultsField.appendChild(resultsLabel);
+
+    const resultsSelect = document.createElement('select');
+    resultsSelect.classList.add('poll-tool-select');
+
+    const alwaysOption = document.createElement('option');
+    alwaysOption.value = 'always';
+    alwaysOption.textContent = 'Always visible';
+    alwaysOption.selected = this.data.pollResults === 'always';
+    resultsSelect.appendChild(alwaysOption);
+
+    const voteOption = document.createElement('option');
+    voteOption.value = 'on_vote';
+    voteOption.textContent = 'After voting';
+    voteOption.selected = this.data.pollResults === 'on_vote';
+    resultsSelect.appendChild(voteOption);
+
+    const closedOption = document.createElement('option');
+    closedOption.value = 'on_close';
+    closedOption.textContent = 'When poll closes';
+    closedOption.selected = this.data.pollResults === 'on_close';
+    resultsSelect.appendChild(closedOption);
+
+    const staffOption = document.createElement('option');
+    staffOption.value = 'staff_only';
+    staffOption.textContent = 'Staff only';
+    staffOption.selected = this.data.pollResults === 'staff_only';
+    resultsSelect.appendChild(staffOption);
+
+    resultsSelect.addEventListener('change', () => {
+      this.data.pollResults = resultsSelect.value;
+    });
+
+    resultsField.appendChild(resultsSelect);
+    this.container.appendChild(resultsField);
+
+    // 创建公开投票信息选项
+    const publicField = document.createElement('div');
+    publicField.classList.add('poll-tool-field', 'poll-tool-checkbox-field');
+
+    const publicCheckbox = document.createElement('input');
+    publicCheckbox.type = 'checkbox';
+    publicCheckbox.id = `poll-public-${Date.now()}`;
+    publicCheckbox.classList.add('poll-tool-checkbox');
+    publicCheckbox.checked = this.data.pollPublic;
+    publicCheckbox.addEventListener('change', () => {
+      this.data.pollPublic = publicCheckbox.checked;
+    });
+
+    const publicLabel = document.createElement('label');
+    publicLabel.classList.add('poll-tool-checkbox-label');
+    publicLabel.textContent = 'Show who voted for which option';
+    publicLabel.htmlFor = publicCheckbox.id;
+
+    publicField.appendChild(publicCheckbox);
+    publicField.appendChild(publicLabel);
+    this.container.appendChild(publicField);
 
     // Create options
     const optionsContainer = document.createElement('div');
@@ -453,6 +522,17 @@ export default class PollTool {
         border-radius: 4px;
         box-sizing: border-box;
       }
+      .poll-tool-checkbox-field {
+        display: flex;
+        align-items: center;
+      }
+      .poll-tool-checkbox {
+        margin-right: 8px;
+      }
+      .poll-tool-checkbox-label {
+        font-weight: normal;
+        cursor: pointer;
+      }
       .poll-tool-options {
         margin-top: 20px;
         width: 100%;
@@ -636,7 +716,9 @@ export default class PollTool {
       pollType: this.data.pollType,
       pollTitle: this.data.pollTitle,
       pollName: this.data.pollName,
-      pollOptionsWithImages: this.data.pollOptionsWithImages
+      pollOptionsWithImages: this.data.pollOptionsWithImages,
+      pollResults: this.data.pollResults,
+      pollPublic: this.data.pollPublic
     };
   }
 }

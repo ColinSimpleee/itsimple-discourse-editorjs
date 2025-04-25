@@ -519,6 +519,8 @@ export default {
                   // 解析投票属性
                   const nameMatch = pollAttributes.match(/name=["']?([^"'\s]+)["']?/);
                   const typeMatch = pollAttributes.match(/type=["']?([^"'\s]+)["']?/);
+                  const resultsMatch = pollAttributes.match(/results=["']?([^"'\s]+)["']?/);
+                  const publicMatch = pollAttributes.match(/public=["']?(true|false)["']?/);
                   
                   // 创建投票块
                   const pollBlock = {
@@ -527,6 +529,8 @@ export default {
                       pollName: nameMatch ? nameMatch[1] : `poll_${Math.floor(Math.random() * 1000)}`,
                       pollTitle: "",
                       pollType: typeMatch ? typeMatch[1] : "regular",
+                      pollResults: resultsMatch ? resultsMatch[1] : "always",
+                      pollPublic: publicMatch ? publicMatch[1] === "true" : false,
                       pollOptions: [],
                       pollOptionsWithImages: []
                     }
@@ -811,8 +815,15 @@ export default {
                   pollMarkdown += ` type=${block.data.pollType}`;
                 }
 
-                // 添加更多选项：结果和公开设置
-                pollMarkdown += ` results=always public=true`;
+                // 添加结果显示配置
+                if (block.data.pollResults) {
+                  pollMarkdown += ` results=${block.data.pollResults}`;
+                }
+                
+                // 添加公开信息配置
+                if (block.data.pollPublic) {
+                  pollMarkdown += ` public=true`;
+                }
                 
                 // 添加图表类型
                 pollMarkdown += ` chartType=bar`;
