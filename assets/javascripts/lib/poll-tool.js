@@ -268,7 +268,12 @@ export default class PollTool {
     optionInput.value = option.text || '';
     optionInput.placeholder = `Option ${index + 1} Text`;
     optionInput.addEventListener("input", () => {
-      this.data.pollOptionsWithImages[index].text = optionInput.value;
+      const newItem = {
+        text: optionInput.value,
+        image: option.image
+      };
+      this.data.pollOptionsWithImages[index] = newItem;
+
       this.data.pollOptions[index] = optionInput.value;
     });
     optionInputContainer.appendChild(optionInput);
