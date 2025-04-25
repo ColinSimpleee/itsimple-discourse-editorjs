@@ -701,7 +701,9 @@ export default class PollTool {
         pollOptionsWithImages: [
           { text: 'Option 1', image: '' },
           { text: 'Option 2', image: '' }
-        ]
+        ],
+        pollResults: this.data.pollResults || 'always',
+        pollPublic: this.data.pollPublic || false
       };
     }
 
