@@ -34,7 +34,7 @@ export default class PollTool {
       pollName: data.pollName || 'poll_' + Math.floor(Math.random() * 1000),
       pollOptionsWithImages: data.pollOptionsWithImages || [],
       pollResults: data.pollResults || 'always',
-      pollPublic: data.pollPublic || false
+      pollPublic: data.pollPublic !== undefined ? data.pollPublic : true
     };
     this.container = undefined;
     this.settings = config;
@@ -703,7 +703,7 @@ export default class PollTool {
           { text: 'Option 2', image: '' }
         ],
         pollResults: this.data.pollResults || 'always',
-        pollPublic: this.data.pollPublic || false
+        pollPublic: this.data.pollPublic !== undefined ? this.data.pollPublic : true
       };
     }
 
@@ -732,7 +732,7 @@ export default class PollTool {
       pollName: this.data.pollName,
       pollOptionsWithImages: this.data.pollOptionsWithImages,
       pollResults: this.data.pollResults,
-      pollPublic: this.data.pollPublic
+      pollPublic: this.data.pollPublic !== undefined ? this.data.pollPublic : true
     };
   }
 }
